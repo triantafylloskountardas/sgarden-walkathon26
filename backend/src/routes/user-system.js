@@ -1,18 +1,72 @@
 import express from "express";
+import crypto from "crypto";
+import { execFile, spawn } from "child_process";
+import { resolve, relative, extname } from "path";
 
 import { validations, email } from "../utils/index.js";
 import { User, Reset, Invitation } from "../models/index.js";
 
 const router = express.Router();
 
-router.post("/createUser",
+const FILES_BASE = resolve("./files");
+const ARCHIVE_BASE = resolve("./archives");
+
+const ALLOWED_SPAWN_COMMANDS = new Set(["echo"]);
+
+function safePath(baseDir, userPath) {
+	const base = resolve(baseDir);
+	const target = resolve(base, userPath);
+	const rel = relative(base, target);
+
+	if (rel.startsWith("..") || rel === ".." || resolve(rel) === rel) {
+		throw new Error("Path traversal blocked");
+	}
+
+	return target;
+}
+
+function safeName(value) {
+	if (typeof value !== "string" || !/^[a-zA-Z0-9._-]+$/.test(value)) {
+		throw new Error("Invalid name");
+	}
+	return value;
+}
+
+function hashPassword(password) {
+	const salt = crypto.randomBytes(16).toString("hex");
+	const hash = crypto.pbkdf2Sync(password, salt, 120000, 64, "sha512").toString("hex");
+	return `pbkdf2_sha512$120000$${salt}$${hash}`;
+}
+
+function encryptData(data, password) {
+	const salt = crypto.randomBytes(16);
+	const iv = crypto.randomBytes(12);
+	const key = crypto.scryptSync(password, salt, 32);
+
+	const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+	const encrypted = Buffer.concat([
+		cipher.update(String(data), "utf8"),
+		cipher.final(),
+	]);
+
+	const authTag = cipher.getAuthTag();
+
+	return Buffer.concat([salt, iv, authTag, encrypted]).toString("base64");
+}
+
+router.post(
+	"/createUser",
 	(req, res, next) => validations.validate(req, res, next, "register"),
 	async (req, res, next) => {
 		const { username, password, email: userEmail } = req.body;
+
 		try {
-			const user = await User.findOne({ $or: [{ username }, { email: userEmail }] });
+			const user = await User.findOne({
+				$or: [{ username }, { email: userEmail }],
+			});
+
 			if (user) {
-				return res.json({
+				return res.status(409).json({
 					status: 409,
 					message: "Registration Error: A user with that e-mail or username already exists.",
 				});
@@ -23,6 +77,7 @@ router.post("/createUser",
 				password,
 				email: userEmail,
 			}).save();
+
 			return res.json({
 				success: true,
 				message: "User created successfully",
@@ -30,27 +85,31 @@ router.post("/createUser",
 		} catch (error) {
 			return next(error);
 		}
-	});
+	}
+);
 
-
-
-router.post("/createUserInvited",
-	(req,res,next) => validations.validate(req, res, next, "register"),
+router.post(
+	"/createUserInvited",
+	(req, res, next) => validations.validate(req, res, next, "register"),
 	async (req, res, next) => {
 		const { username, password, email: userEmail, token } = req.body;
+
 		try {
 			const invitation = await Invitation.findOne({ token });
 
 			if (!invitation) {
-				return res.json({
+				return res.status(400).json({
 					success: false,
 					message: "Invalid token",
 				});
 			}
 
-			const user = await User.findOne({ $or: [{ username }, { email: userEmail }] });
+			const user = await User.findOne({
+				$or: [{ username }, { email: userEmail }],
+			});
+
 			if (user) {
-				return res.json({
+				return res.status(409).json({
 					status: 409,
 					message: "Registration Error: A user with that e-mail or username already exists.",
 				});
@@ -62,120 +121,128 @@ router.post("/createUserInvited",
 				email: userEmail,
 			}).save();
 
+			await Invitation.deleteOne({ token });
+
 			return res.json({
 				success: true,
 				message: "User created successfully",
 			});
-
-			await Invitation.deleteOne({ token });
 		} catch (error) {
 			return next(error);
 		}
-	});
+	}
+);
 
-router.post("/authenticate",
+router.post(
+	"/authenticate",
 	(req, res, next) => validations.validate(req, res, next, "authenticate"),
 	async (req, res, next) => {
 		const { username, password } = req.body;
+
 		try {
 			const user = await User.findOne({ username }).select("+password");
-			if (!user) {
-				return res.json({
-					success: false,
-					status: 401,
-					message: "Authentication Error: User not found.",
-				});
-			}
 
-			if (!user.comparePassword(password, user.password)) {
-				return res.json({
+			if (!user || !user.comparePassword(password, user.password)) {
+				return res.status(401).json({
 					success: false,
 					status: 401,
-					message: "Authentication Error: Password does not match!",
+					message: "Authentication Error: Invalid username or password.",
 				});
 			}
 
 			return res.json({
 				success: true,
 				user: {
-					username,
+					username: user.username,
 					id: user._id,
 					email: user.email,
 					role: user.role,
 				},
-				token: validations.jwtSign({ username, id: user._id, email: user.email, role: user.role }),
+				token: validations.jwtSign({
+					username: user.username,
+					id: user._id,
+					email: user.email,
+					role: user.role,
+				}),
 			});
 		} catch (error) {
 			return next(error);
 		}
-	});
+	}
+);
 
-router.post("/forgotpassword",
+router.post(
+	"/forgotpassword",
 	(req, res, next) => validations.validate(req, res, next, "request"),
 	async (req, res) => {
 		try {
 			const { username } = req.body;
 
 			const user = await User.findOne({ username }).select("+password");
-			if (!user) {
-				return res.json({
-					status: 404,
-					message: "Resource Error: User not found.",
-				});
-			}
 
-			if (!user?.password) {
+			if (!user || !user?.password) {
 				return res.json({
-					status: 404,
-					message: "User has logged in with google",
+					success: true,
+					message: "If the account exists, a reset e-mail will be sent.",
 				});
 			}
 
 			const token = validations.jwtSign({ username });
 			await Reset.findOneAndRemove({ username });
+
 			await new Reset({
 				username,
 				token,
 			}).save();
 
 			await email.forgotPassword(user.email, token);
+
 			return res.json({
 				success: true,
 				message: "Forgot password e-mail sent.",
 			});
-		} catch (error) {
-			return res.json({
+		} catch {
+			return res.status(500).json({
 				success: false,
-				message: error.body,
+				message: "Could not process forgot password request.",
 			});
 		}
-	});
+	}
+);
 
 router.post("/resetpassword", async (req, res) => {
 	const { token, password } = req.body;
+
+	if (!token || !password) {
+		return res.status(400).json({
+			success: false,
+			message: "Token and password required.",
+		});
+	}
 
 	try {
 		const reset = await Reset.findOne({ token });
 
 		if (!reset) {
-			return res.json({
+			return res.status(400).json({
 				status: 400,
 				message: "Invalid Token!",
 			});
 		}
 
-		const today = new Date();
+		if (reset.expireAt < new Date()) {
+			await Reset.deleteOne({ _id: reset._id });
 
-		if (reset.expireAt < today) {
-			return res.json({
+			return res.status(400).json({
 				success: false,
 				message: "Token expired",
 			});
 		}
 
 		const user = await User.findOne({ username: reset.username });
+
 		if (!user) {
-			return res.json({
+			return res.status(404).json({
 				success: false,
 				message: "User does not exist",
 			});
@@ -189,10 +256,10 @@ router.post("/resetpassword", async (req, res) => {
 			success: true,
 			message: "Password updated succesfully",
 		});
-	} catch (error) {
-		return res.json({
+	} catch {
+		return res.status(500).json({
 			success: false,
-			message: error,
+			message: "Password reset failed.",
 		});
 	}
 });
@@ -205,41 +272,64 @@ router.post("/system/execute", (req, res) => {
 			return res.status(400).json({ message: "Command required" });
 		}
 
-		const { exec } = require("child_process");
-
-
-		exec(`echo ${command}`, (error, stdout, stderr) => {
+		execFile("echo", [String(command)], { shell: false }, (error, stdout) => {
 			if (error) {
 				return res.status(500).json({ message: "Execution failed" });
 			}
+
 			return res.json({ success: true, output: stdout });
 		});
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
 
 router.post("/system/spawn", (req, res) => {
 	try {
-		const { cmd, args } = req.body;
+		const { cmd, args = [] } = req.body;
 
 		if (!cmd) {
 			return res.status(400).json({ message: "Command required" });
 		}
 
-		const { spawn } = require("child_process");
+		if (!ALLOWED_SPAWN_COMMANDS.has(cmd)) {
+			return res.status(400).json({ message: "Command not allowed" });
+		}
 
-		const process = spawn(cmd, args || []);
+		if (!Array.isArray(args) || args.some((arg) => typeof arg !== "string")) {
+			return res.status(400).json({ message: "Invalid arguments" });
+		}
 
-		let output = '';
-		process.stdout.on('data', (data) => {
+		const child = spawn(cmd, args, {
+			shell: false,
+			windowsHide: true,
+			timeout: 5000,
+		});
+
+		let output = "";
+		let errorOutput = "";
+
+		child.stdout.on("data", (data) => {
 			output += data.toString();
 		});
 
-		process.on('close', (code) => {
-			return res.json({ success: true, output, exitCode: code });
+		child.stderr.on("data", (data) => {
+			errorOutput += data.toString();
 		});
-	} catch (error) {
+
+		child.on("error", () => {
+			return res.status(500).json({ message: "Spawn failed" });
+		});
+
+		child.on("close", (code) => {
+			return res.json({
+				success: code === 0,
+				output,
+				error: errorOutput,
+				exitCode: code,
+			});
+		});
+	} catch {
 		return res.status(500).json({ message: "Spawn failed" });
 	}
 });
@@ -252,17 +342,23 @@ router.post("/compress-files", (req, res) => {
 			return res.status(400).json({ message: "Filename and output name required" });
 		}
 
-		const { exec } = require("child_process");
+		const safeOutputName = safeName(outputName);
+		const inputPath = safePath(FILES_BASE, filename);
+		const outputPath = safePath(ARCHIVE_BASE, `${safeOutputName}.zip`);
 
-		// Direct string concatenation in shell command
-		exec(`zip -r ${outputName}.zip ./files/${filename}`, (error, _, __) => {
+		execFile("zip", ["-r", outputPath, inputPath], { shell: false }, (error) => {
 			if (error) {
 				return res.status(500).json({ message: "Compression failed" });
 			}
-			return res.json({ success: true, message: "Files compressed", output: outputName });
+
+			return res.json({
+				success: true,
+				message: "Files compressed",
+				output: safeOutputName,
+			});
 		});
-	} catch (error) {
-		return res.status(500).json({ message: "Something went wrong." });
+	} catch {
+		return res.status(400).json({ message: "Invalid compression input" });
 	}
 });
 
@@ -274,11 +370,10 @@ router.post("/hash-password-md5", (req, res) => {
 			return res.status(400).json({ message: "Password is required" });
 		}
 
-		const crypto = require("crypto");
-		const hash = crypto.createHash('md5').update(password).digest('hex');
+		const hash = hashPassword(password);
 
 		return res.json({ success: true, hash });
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Hashing failed" });
 	}
 });
@@ -291,13 +386,10 @@ router.post("/encrypt-data", (req, res) => {
 			return res.status(400).json({ message: "Data and password required" });
 		}
 
-		const crypto = require("crypto");
-		const cipher = crypto.createCipher('des', password);
-		let encrypted = cipher.update(data, 'utf8', 'hex');
-		encrypted += cipher.final('hex');
+		const encrypted = encryptData(data, password);
 
 		return res.json({ success: true, encrypted });
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Encryption failed" });
 	}
 });

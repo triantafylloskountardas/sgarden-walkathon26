@@ -7,7 +7,7 @@ import {
 	statSync,
 	mkdirSync,
 } from "fs";
-import { resolve, join, extname } from "path";
+import { resolve, relative, sep, basename, extname } from "path";
 
 const router = express.Router({ mergeParams: true });
 
@@ -28,9 +28,11 @@ function safePath(baseDir, userPath, allowedExts = null) {
 		throw new Error("Invalid path");
 	}
 
-	const resolvedPath = resolve(baseDir, userPath);
+	const normalizedBase = resolve(baseDir);
+	const resolvedPath = resolve(normalizedBase, userPath);
+	const rel = relative(normalizedBase, resolvedPath);
 
-	if (!resolvedPath.startsWith(baseDir + "/") && resolvedPath !== baseDir) {
+	if (rel.startsWith("..") || rel === ".." || resolve(rel) === rel) {
 		throw new Error("Path traversal blocked");
 	}
 
@@ -42,9 +44,17 @@ function safePath(baseDir, userPath, allowedExts = null) {
 }
 
 function renderTemplate(templateString, data = {}) {
-	return String(templateString).replace(/\$\{([\w.]+)\}/g, (_, keyPath) => {
-		const value = keyPath.split(".").reduce((obj, key) => obj?.[key], data);
-		return value == null ? "" : String(value);
+	const safeData = Object.fromEntries(
+		Object.entries(data).filter(([key, value]) =>
+			/^[a-zA-Z0-9_]+$/.test(key) &&
+			["string", "number", "boolean"].includes(typeof value)
+		)
+	);
+
+	return String(templateString).replace(/\$\{([a-zA-Z0-9_]+)\}/g, (_, key) => {
+		return Object.prototype.hasOwnProperty.call(safeData, key)
+			? String(safeData[key])
+			: "";
 	});
 }
 
@@ -120,10 +130,25 @@ router.post("/upload-file", (req, res) => {
 			return res.status(400).json({ message: "Filename and content required" });
 		}
 
-		const uploadDir = safePath(BASE_DIRS.uploads, destination);
+		const safeDestination =
+			typeof destination === "string" && destination.trim()
+				? destination
+				: "";
+
+		const safeFilename = basename(filename);
+
+		if (safeFilename !== filename) {
+			return res.status(400).json({ message: "Invalid filename" });
+		}
+
+		const uploadDir = safePath(BASE_DIRS.uploads, safeDestination);
 		mkdirSync(uploadDir, { recursive: true });
 
-		const uploadPath = safePath(uploadDir, filename);
+		const uploadPath = safePath(
+			BASE_DIRS.uploads,
+			join(safeDestination, safeFilename)
+		);
+
 		writeFileSync(uploadPath, content, "utf8");
 
 		return res.json({
