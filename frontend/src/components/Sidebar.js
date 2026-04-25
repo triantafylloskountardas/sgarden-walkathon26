@@ -82,6 +82,12 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 			handler: () => {
 				navigate("/users");
 			},
+		}, {
+			text: t("sidebar.audit"),
+			handler: () => {
+				navigate("/admin/audit");
+			},
+			testId: "sidebar-audit-link",
 		}] : []),
 		{
 			text: t("sidebar.overview"),
@@ -109,7 +115,14 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 			testId: "sidebar-map-link",
 		},
 		{
-			text: "Reports",
+			text: t("sidebar.salesData"),
+			handler: () => {
+				navigate("/data/manage");
+			},
+			testId: "sidebar-sales-data-link",
+		},
+		{
+			text: t("sidebar.reports"),
 			handler: () => {
 				navigate("/reports");
 			},

@@ -145,7 +145,7 @@ router.post(
 				success: true,
 				message: "User created successfully",
 			});
-		} catch (error) {
+		} catch {
 			return next(error);
 		}
 	}

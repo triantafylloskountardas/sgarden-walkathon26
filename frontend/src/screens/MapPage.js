@@ -78,6 +78,7 @@ const MapPage = () => {
 	const [selectedRegion, setSelectedRegion] = useState(null);
 	const [formState, setFormState] = useState(emptyForm);
 	const [hoveredRegion, setHoveredRegion] = useState(null);
+	const [lastSavedRegionId, setLastSavedRegionId] = useState(null);
 
 	const activeTooltip = useMemo(() => {
 		if (!hoveredRegion) return null;
@@ -125,6 +126,8 @@ const MapPage = () => {
 
 		setRegionData(nextData);
 		writeRegionData(nextData);
+		setLastSavedRegionId(selectedRegion.id);
+		setHoveredRegion({ id: selectedRegion.id, name: selectedRegion.name });
 		success("Region data saved.");
 	};
 
@@ -240,6 +243,17 @@ const MapPage = () => {
 								</Box>
 							))}
 						</Box>
+
+						{lastSavedRegionId && regionData[lastSavedRegionId] && (
+							<Paper sx={{ mt: 2, p: 2, backgroundColor: "rgba(255,255,255,0.06)" }}>
+								<Typography color="white.main" fontWeight="bold">
+									Last saved region
+								</Typography>
+								<Typography color="white.main" sx={{ opacity: 0.8 }}>
+									{`${regionData[lastSavedRegionId].regionName} • ${regionData[lastSavedRegionId].category} • Revenue ${regionData[lastSavedRegionId].revenue}`}
+								</Typography>
+							</Paper>
+						)}
 					</Paper>
 				</Grid>
 
@@ -316,6 +330,17 @@ const MapPage = () => {
 							<Typography color="white.main" sx={{ opacity: 0.8 }}>
 								Select a region on the map to enter category, revenue, headcount, and notes.
 							</Typography>
+						)}
+
+						{selectedRegion && regionData[selectedRegion.id] && (
+							<Box sx={{ mt: 2 }}>
+								<Typography color="white.main" fontWeight="bold">
+									Saved snapshot
+								</Typography>
+								<Typography color="white.main" sx={{ opacity: 0.8 }}>
+									{`${regionData[selectedRegion.id].category} • Revenue ${regionData[selectedRegion.id].revenue} • Headcount ${regionData[selectedRegion.id].headcount}`}
+								</Typography>
+							</Box>
 						)}
 					</Paper>
 				</Grid>

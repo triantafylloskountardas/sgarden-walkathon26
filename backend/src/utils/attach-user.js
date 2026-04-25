@@ -28,7 +28,7 @@ const attachUser = async (req, res, next) => {
 		}
 
 		return res.status(401).json({ message: "No token provided." });
-	} catch (error) {
+	} catch {
 		return res.status(401).json({ message: "Failed to authenticate user." });
 	}
 };

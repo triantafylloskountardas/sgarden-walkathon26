@@ -186,13 +186,31 @@ const Alerts = () => {
 			)}
 
 			{alerts.length === 0 ? (
-				<Paper data-testid="alerts-empty" sx={{ p: 3, mb: 3, backgroundColor: "rgba(255,255,255,0.08)" }}>
-					<Typography color="white.main" fontWeight="bold">
-						{t("alerts.emptyTitle")}
-					</Typography>
-					<Typography color="white.main" sx={{ opacity: 0.8 }}>
-						{t("alerts.emptyBody")}
-					</Typography>
+				<Paper sx={{ p: 2, mb: 3, backgroundColor: "rgba(255,255,255,0.08)" }}>
+					<Table data-testid="alerts-table">
+						<TableHead>
+							<TableRow>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.metric")}</TableCell>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.rule")}</TableCell>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.enabled")}</TableCell>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.actions")}</TableCell>
+							</TableRow>
+						</TableHead>
+						<TableBody>
+							<TableRow>
+								<TableCell colSpan={4}>
+									<Box data-testid="alerts-empty" py={2}>
+										<Typography color="white.main" fontWeight="bold">
+											{t("alerts.emptyTitle")}
+										</Typography>
+										<Typography color="white.main" sx={{ opacity: 0.8 }}>
+											{t("alerts.emptyBody")}
+										</Typography>
+									</Box>
+								</TableCell>
+							</TableRow>
+						</TableBody>
+					</Table>
 				</Paper>
 			) : (
 				<Paper sx={{ p: 2, mb: 3, backgroundColor: "rgba(255,255,255,0.08)" }}>
@@ -211,12 +229,17 @@ const Alerts = () => {
 									<TableCell sx={{ color: "white.main" }}>{alert.metric}</TableCell>
 									<TableCell sx={{ color: "white.main" }}>{`${alert.operator} ${alert.threshold}`}</TableCell>
 									<TableCell sx={{ color: "white.main" }}>
-										<Switch
-											data-testid={`alerts-toggle-${alert.id}`}
-											checked={alert.enabled}
-											onChange={() => handleToggleAlert(alert.id)}
-											color="secondary"
-										/>
+										<Box display="flex" alignItems="center" gap={1}>
+											<Switch
+												checked={alert.enabled}
+												onChange={() => handleToggleAlert(alert.id)}
+												color="secondary"
+												inputProps={{ "data-testid": `alerts-toggle-${alert.id}` }}
+											/>
+											<Typography color="white.main">
+												{alert.enabled ? "On" : "Off"}
+											</Typography>
+										</Box>
 									</TableCell>
 									<TableCell>
 										<Button

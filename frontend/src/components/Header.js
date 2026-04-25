@@ -136,6 +136,15 @@ const writeRecentSearches = (recentSearches) => {
 	}
 };
 
+const createRecentSearchEntry = (query, fallbackItem) => ({
+	id: `recent-${query.toLowerCase()}`,
+	title: `Search: ${query}`,
+	description: fallbackItem?.description || `Recent search for "${query}"`,
+	path: fallbackItem?.path || "/dashboard",
+	category: fallbackItem?.category || "Recent",
+	keywords: [query.toLowerCase()],
+});
+
 const getSearchItems = (isAdmin, t) => [
 	{
 		id: "dashboard-overview",
@@ -178,12 +187,36 @@ const getSearchItems = (isAdmin, t) => [
 		keywords: ["import", "csv", "json", "upload", "data"],
 	},
 	{
+		id: "sales-data",
+		title: t("search.item.salesData.title"),
+		description: t("search.item.salesData.description"),
+		path: "/data/manage",
+		category: t("search.category.data"),
+		keywords: ["sales", "records", "crud", "manage", "data"],
+	},
+	{
 		id: "map",
 		title: t("search.item.map.title"),
 		description: t("search.item.map.description"),
 		path: "/map",
 		category: t("search.category.data"),
 		keywords: ["map", "regions", "geography", "visualization"],
+	},
+	{
+		id: "reports",
+		title: t("search.item.reports.title"),
+		description: t("search.item.reports.description"),
+		path: "/reports",
+		category: t("search.category.data"),
+		keywords: ["reports", "builder", "print", "pdf"],
+	},
+	{
+		id: "alerts",
+		title: t("search.item.alerts.title"),
+		description: t("search.item.alerts.description"),
+		path: "/alerts",
+		category: t("search.category.data"),
+		keywords: ["alerts", "thresholds", "rules", "notifications"],
 	},
 	...(isAdmin ? [{
 		id: "users",
@@ -192,6 +225,13 @@ const getSearchItems = (isAdmin, t) => [
 		path: "/users",
 		category: t("search.category.admin"),
 		keywords: ["users", "admin", "roles", "permissions"],
+	}, {
+		id: "audit",
+		title: t("search.item.audit.title"),
+		description: t("search.item.audit.description"),
+		path: "/admin/audit",
+		category: t("search.category.admin"),
+		keywords: ["audit", "admin", "security", "trail", "logs"],
 	}] : []),
 ];
 
@@ -249,7 +289,10 @@ const Header = ({ isAuthenticated }) => {
 	const handleLanguageMenuOpen = (event) => setLanguageAnchorEl(event.currentTarget);
 	const handleLanguageMenuClose = () => setLanguageAnchorEl(null);
 	const openSearch = () => setSearchOpen(true);
-	const closeSearch = () => {
+	const closeSearch = (trackQuery = true) => {
+		if (trackQuery && searchValue.trim()) {
+			pushRecentSearch(createRecentSearchEntry(searchValue.trim(), filteredResults[0]));
+		}
 		setSearchOpen(false);
 		setSearchValue("");
 	};
@@ -267,7 +310,7 @@ const Header = ({ isAuthenticated }) => {
 	const navigateFromSearch = (item) => {
 		pushRecentSearch(item);
 		navigate(item.path);
-		closeSearch();
+		closeSearch(false);
 	};
 
 	useEffect(() => {
