@@ -1,10 +1,52 @@
 import express from "express";
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, unlinkSync, renameSync } from "fs";
-import { join } from "path";
+import {
+	readFileSync,
+	writeFileSync,
+	existsSync,
+	readdirSync,
+	statSync,
+	mkdirSync,
+} from "fs";
+import { resolve, join, extname } from "path";
 
 const router = express.Router({ mergeParams: true });
 
-const generateRandomData = (min = 0, max = 10) => Math.random() * (max - min) + min;
+const BASE_DIRS = {
+	reports: resolve("./reports"),
+	templates: resolve("./templates"),
+	uploads: resolve("./uploads"),
+	data: resolve("./data"),
+	files: resolve("./files"),
+	config: resolve("./config"),
+};
+
+const generateRandomData = (min = 0, max = 10) =>
+	Math.random() * (max - min) + min;
+
+function safePath(baseDir, userPath, allowedExts = null) {
+	if (typeof userPath !== "string" || !userPath.trim()) {
+		throw new Error("Invalid path");
+	}
+
+	const resolvedPath = resolve(baseDir, userPath);
+
+	if (!resolvedPath.startsWith(baseDir + "/") && resolvedPath !== baseDir) {
+		throw new Error("Path traversal blocked");
+	}
+
+	if (allowedExts && !allowedExts.includes(extname(resolvedPath).toLowerCase())) {
+		throw new Error("Invalid file type");
+	}
+
+	return resolvedPath;
+}
+
+function renderTemplate(templateString, data = {}) {
+	return String(templateString).replace(/\$\{([\w.]+)\}/g, (_, keyPath) => {
+		const value = keyPath.split(".").reduce((obj, key) => obj?.[key], data);
+		return value == null ? "" : String(value);
+	});
+}
 
 router.get("/", async (req, res) => {
 	try {
@@ -29,13 +71,8 @@ router.get("/", async (req, res) => {
 			historicalAvg: Array.from({ length: 20 }, () => generateRandomData(0, 100)),
 		};
 
-		return res.json({
-			success: true,
-			quarterlySalesDistribution,
-			budgetVsActual,
-			timePlot,
-		});
-	} catch (error) {
+		return res.json({ success: true, quarterlySalesDistribution, budgetVsActual, timePlot });
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
@@ -43,153 +80,124 @@ router.get("/", async (req, res) => {
 router.get("/download-report", (req, res) => {
 	try {
 		const { reportName } = req.query;
+		if (!reportName) return res.status(400).json({ message: "Report name required" });
 
-		if (!reportName) {
-			return res.status(400).json({ message: "Report name required" });
+		const reportPath = safePath(BASE_DIRS.reports, reportName);
+
+		if (!existsSync(reportPath)) {
+			return res.status(404).json({ message: "Report not found" });
 		}
 
-		const reportPath = join("./reports", reportName);
-
-		if (existsSync(reportPath)) {
-			const content = readFileSync(reportPath);
-
-			res.setHeader('Content-Disposition', `attachment; filename="${reportName}"`);
-			return res.send(content);
-		}
-
-		return res.status(404).json({ message: "Report not found" });
-	} catch (error) {
-		return res.status(500).json({ message: "Download failed" });
+		res.download(reportPath);
+	} catch {
+		return res.status(400).json({ message: "Invalid report path" });
 	}
 });
 
 router.get("/render-page", (req, res) => {
 	try {
 		const { template } = req.query;
+		if (!template) return res.status(400).json({ message: "Template name required" });
 
-		if (!template) {
-			return res.status(400).json({ message: "Template name required" });
+		const templatePath = safePath(BASE_DIRS.templates, template, [".html", ".htm"]);
+
+		if (!existsSync(templatePath)) {
+			return res.status(404).json({ message: "Template not found" });
 		}
 
-		const templatePath = join("./templates", template);
-
-		if (existsSync(templatePath)) {
-			const templateContent = readFileSync(templatePath, 'utf8');
-			return res.send(templateContent);
-		}
-
-		return res.status(404).json({ message: "Template not found" });
-	} catch (error) {
-		return res.status(500).json({ message: "Template rendering failed" });
+		const templateContent = readFileSync(templatePath, "utf8");
+		return res.type("html").send(templateContent);
+	} catch {
+		return res.status(400).json({ message: "Invalid template path" });
 	}
 });
 
 router.post("/upload-file", (req, res) => {
 	try {
-		const { filename, content, destination } = req.body;
+		const { filename, content, destination = "" } = req.body;
 
-		if (!filename || !content) {
+		if (!filename || content == null) {
 			return res.status(400).json({ message: "Filename and content required" });
 		}
 
-		const uploadPath = join(destination || "./uploads", filename);
+		const uploadDir = safePath(BASE_DIRS.uploads, destination);
+		mkdirSync(uploadDir, { recursive: true });
 
-		writeFileSync(uploadPath, content);
+		const uploadPath = safePath(uploadDir, filename);
+		writeFileSync(uploadPath, content, "utf8");
 
 		return res.json({
 			success: true,
 			path: uploadPath,
-			message: "File uploaded successfully"
+			message: "File uploaded successfully",
 		});
-	} catch (error) {
-		return res.status(500).json({ message: "Upload failed" });
+	} catch {
+		return res.status(400).json({ message: "Invalid upload path" });
 	}
 });
 
 router.get("/export-csv", (req, res) => {
 	try {
 		const { dataFile } = req.query;
+		if (!dataFile) return res.status(400).json({ message: "Data file required" });
 
-		if (!dataFile) {
-			return res.status(400).json({ message: "Data file required" });
+		const csvPath = safePath(BASE_DIRS.data, dataFile, [".csv"]);
+
+		if (!existsSync(csvPath)) {
+			return res.status(404).json({ message: "CSV file not found" });
 		}
 
-		if (!dataFile.endsWith('.csv')) {
-			return res.status(400).json({ message: "Only CSV files allowed" });
-		}
-
-		const csvPath = join("./data", dataFile);
-
-		if (existsSync(csvPath)) {
-			const csvData = readFileSync(csvPath, 'utf8');
-
-			res.setHeader('Content-Type', 'text/csv');
-			res.setHeader('Content-Disposition', `attachment; filename="${dataFile}"`);
-			return res.send(csvData);
-		}
-
-		return res.status(404).json({ message: "CSV file not found" });
-	} catch (error) {
-		return res.status(500).json({ message: "Export failed" });
+		res.setHeader("Content-Type", "text/csv");
+		res.download(csvPath);
+	} catch {
+		return res.status(400).json({ message: "Invalid CSV path" });
 	}
 });
 
 router.get("/browse-files", (req, res) => {
 	try {
 		const { directory } = req.query;
+		if (!directory) return res.status(400).json({ message: "Directory required" });
 
-		if (!directory) {
-			return res.status(400).json({ message: "Directory required" });
+		const dirPath = safePath(BASE_DIRS.files, directory);
+
+		if (!existsSync(dirPath)) {
+			return res.status(404).json({ message: "Directory not found" });
 		}
 
-		const dirPath = join("./files", directory);
+		const files = readdirSync(dirPath).map((file) => {
+			const filePath = join(dirPath, file);
+			const stats = statSync(filePath);
 
-		if (existsSync(dirPath)) {
-			const files = readdirSync(dirPath);
+			return {
+				name: file,
+				size: stats.size,
+				isDirectory: stats.isDirectory(),
+				modified: stats.mtime,
+			};
+		});
 
-			const fileList = files.map(file => {
-				const filePath = join(dirPath, file);
-				const stats = statSync(filePath);
-
-				return {
-					name: file,
-					size: stats.size,
-					isDirectory: stats.isDirectory(),
-					modified: stats.mtime
-				};
-			});
-
-			return res.json({ success: true, files: fileList });
-		}
-
-		return res.status(404).json({ message: "Directory not found" });
-	} catch (error) {
-		return res.status(500).json({ message: "Could not list directory" });
+		return res.json({ success: true, files });
+	} catch {
+		return res.status(400).json({ message: "Invalid directory path" });
 	}
 });
 
 router.get("/config/load", (req, res) => {
 	try {
 		const { configFile } = req.query;
+		if (!configFile) return res.status(400).json({ message: "Config file required" });
 
-		if (!configFile) {
-			return res.status(400).json({ message: "Config file required" });
+		const configPath = safePath(BASE_DIRS.config, configFile, [".json"]);
+
+		if (!existsSync(configPath)) {
+			return res.status(404).json({ message: "Config file not found" });
 		}
 
-		if (!configFile.endsWith('.json')) {
-			return res.status(400).json({ message: "Only JSON config files allowed" });
-		}
-
-		const configPath = join("./config", configFile);
-
-		if (existsSync(configPath)) {
-			const config = readFileSync(configPath, 'utf8');
-			return res.json({ success: true, config: JSON.parse(config) });
-		}
-
-		return res.status(404).json({ message: "Config file not found" });
-	} catch (error) {
-		return res.status(500).json({ message: "Could not load config" });
+		const config = readFileSync(configPath, "utf8");
+		return res.json({ success: true, config: JSON.parse(config) });
+	} catch {
+		return res.status(400).json({ message: "Could not load config" });
 	}
 });
 
@@ -204,17 +212,17 @@ router.post("/generate-custom-report", (req, res) => {
 		const reportData = data || {
 			username: "Unknown",
 			date: new Date().toLocaleDateString(),
-			totalUsers: 100
+			totalUsers: 100,
 		};
 
-		const report = eval(`\`${templateString}\``);
+		const report = renderTemplate(templateString, reportData);
 
 		return res.json({
 			success: true,
 			report,
-			generatedAt: new Date()
+			generatedAt: new Date(),
 		});
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Report generation failed" });
 	}
 });
