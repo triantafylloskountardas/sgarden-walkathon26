@@ -31,8 +31,8 @@ import Dashboard2 from "./screens/Dashboard2.js";
 import Profile from "./screens/Profile.js";
 import ImportScreen from "./screens/Import.js";
 import Alerts from "./screens/Alerts.js";
+import MapPage from "./screens/MapPage.js";
 import { adjustColors, jwt, colorSuggestions, I18nProvider } from "./utils/index.js";
-import Map from "./components/Map.js";
 
 const theme = createTheme({
 	palette: {
@@ -92,7 +92,7 @@ const App = () => {
 									<Route path="alerts" element={<Protected c={<Alerts />} />} />
 									<Route path="profile" element={<Protected c={<Profile />} />} />
 									<Route path="import" element={<Protected c={<ImportScreen />} />} />
-									<Route path="map" element={<Protected c={<Map />} />} />
+									<Route path="map" element={<Protected c={<MapPage />} />} />
 									<Route path="*" element={<NotFound />} />
 								</Routes>
 							</main>
