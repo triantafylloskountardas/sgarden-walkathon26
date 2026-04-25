@@ -74,11 +74,9 @@ const useStyles = makeStyles((theme) => ({
 	},
 }));
 
-const ButtonWithText = ({ text, icon, more, handler }) => (
-	<Button sx={{ height: "100%", display: "flex", flexDirection: "column", p: 1, mx: 1 }} onClick={(event) => handler(event)}>
-		<div style={{ width: "100%", height: "100%" }}>
-			{icon}
-		</div>
+const ButtonWithText = ({ text, icon, more, handler, testId }) => (
+	<Button data-testid={testId} sx={{ height: "100%", display: "flex", flexDirection: "column", p: 1, mx: 1 }} onClick={(event) => handler(event)}>
+		{icon && <div style={{ width: "100%", height: "100%" }}>{icon}</div>}
 		<Typography align="center" color="secondary.main" fontSize="small" fontWeight="bold" display="flex" alignItems="center" sx={{ textTransform: "capitalize" }}>
 			{text}
 			{more && <ExpandMore />}
@@ -101,6 +99,14 @@ const Header = ({ isAuthenticated }) => {
 
 	const buttons = [
 		{
+			icon: null,
+			text: "Profile",
+			handler: () => {
+				navigate("/profile");
+			},
+			testId: "profile-nav-link",
+		},
+		{
 			icon: <LogoutIcon className={classes.svgIcon} />,
 			text: "Logout",
 			handler: () => {
@@ -120,9 +126,9 @@ const Header = ({ isAuthenticated }) => {
 			onClose={handleMobileMenuClose}
 		>
 			{buttons.map((button) => (
-				<MenuItem key={button.text} onClick={button.handler}>
-					<Image src={button.icon} width="20px" sx={{ fill: "third" }} />
-					<p style={{ marginLeft: "5px" }}>{button.text}</p>
+				<MenuItem key={button.text} onClick={button.handler} data-testid={button.testId}>
+					{button.icon && <Box sx={{ mr: 1, display: "flex", alignItems: "center" }}>{button.icon}</Box>}
+					<p style={{ marginLeft: button.icon ? "5px" : 0 }}>{button.text}</p>
 					{button.more && <ExpandMore />}
 				</MenuItem>
 			))}
@@ -146,38 +152,38 @@ const Header = ({ isAuthenticated }) => {
 					</Box>
 					<Box className={classes.grow} style={{ height: "100%" }} />
 					{isAuthenticated
-					&& (
-						<>
-							<Box sx={{ display: { xs: "none", sm: "none", md: "flex" }, height: "100%", py: 1 }}>
-								{buttons.map((button) => (
-									<ButtonWithText
-										key={button.text}
-										icon={button.icon}
-										text={button.text}
-										handler={button.handler}
-										more={button.more}
-									/>
-								))}
-							</Box>
-							<Box sx={{ display: { xs: "flex", sm: "flex", md: "none" } }}>
-								<IconButton color="primary" onClick={handleMobileMenuOpen}><MoreIcon /></IconButton>
-							</Box>
-						</>
-					)}
+						&& (
+							<>
+								<Box sx={{ display: { xs: "none", sm: "none", md: "flex" }, height: "100%", py: 1 }}>
+									{buttons.map((button) => (
+										<ButtonWithText
+											key={button.text}
+											icon={button.icon}
+											text={button.text}
+											handler={button.handler}
+											more={button.more} testId={button.testId}
+										/>
+									))}
+								</Box>
+								<Box sx={{ display: { xs: "flex", sm: "flex", md: "none" } }}>
+									<IconButton color="primary" onClick={handleMobileMenuOpen}><MoreIcon /></IconButton>
+								</Box>
+							</>
+						)}
 				</Toolbar>
 			</AppBar>
 			{isAuthenticated
-			&& (
-				<Paper elevation={0} className={classes.root}>
-					<Breadcrumbs className="header-container">{crumps.map((e, ind) => <div key={`crump_${ind}`}>{e}</div>)}</Breadcrumbs>
-				</Paper>
-			)}
+				&& (
+					<Paper elevation={0} className={classes.root}>
+						<Breadcrumbs className="header-container">{crumps.map((e, ind) => <div key={`crump_${ind}`}>{e}</div>)}</Breadcrumbs>
+					</Paper>
+				)}
 			{isAuthenticated
-			&& (
-				<>
-					{renderMobileMenu}
-				</>
-			)}
+				&& (
+					<>
+						{renderMobileMenu}
+					</>
+				)}
 		</>
 	);
 };

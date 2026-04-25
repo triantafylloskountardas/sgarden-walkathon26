@@ -8,33 +8,33 @@ const generateRandomData = (min = 0, max = 10) => Math.random() * (max - min) + 
 
 router.get("/", async (req, res) => {
 	try {
-        const quarterlySalesDistribution = {
-            Q1: Array.from({ length: 100 }, () => generateRandomData(0, 10)),
-            Q2: Array.from({ length: 100 }, () => generateRandomData(0, 10)),
-            Q3: Array.from({ length: 100 }, () => generateRandomData(0, 10)),
-        };
+		const quarterlySalesDistribution = {
+			Q1: Array.from({ length: 100 }, () => generateRandomData(0, 10)),
+			Q2: Array.from({ length: 100 }, () => generateRandomData(0, 10)),
+			Q3: Array.from({ length: 100 }, () => generateRandomData(0, 10)),
+		};
 
-        const budgetVsActual = {
-            January: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
-            February: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
-            March: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
-            April: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
-            May: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
-            June: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
-        };
+		const budgetVsActual = {
+			January: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
+			February: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
+			March: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
+			April: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
+			May: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
+			June: { budget: generateRandomData(0, 100), actual: generateRandomData(0, 100), forecast: generateRandomData(0, 100) },
+		};
 
-        const timePlot = {
-            projected: Array.from({ length: 20 }, () => generateRandomData(0, 100)),
-            actual: Array.from({ length: 20 }, () => generateRandomData(0, 100)),
-            historicalAvg: Array.from({ length: 20 }, () => generateRandomData(0, 100)),
-        };
+		const timePlot = {
+			projected: Array.from({ length: 20 }, () => generateRandomData(0, 100)),
+			actual: Array.from({ length: 20 }, () => generateRandomData(0, 100)),
+			historicalAvg: Array.from({ length: 20 }, () => generateRandomData(0, 100)),
+		};
 
-        return res.json({
-            success: true,
-            quarterlySalesDistribution,
-            budgetVsActual,
-            timePlot,
-        });
+		return res.json({
+			success: true,
+			quarterlySalesDistribution,
+			budgetVsActual,
+			timePlot,
+		});
 	} catch (error) {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
@@ -96,8 +96,8 @@ router.post("/upload-file", (req, res) => {
 
 		writeFileSync(uploadPath, content);
 
-		return res.json({ 
-			success: true, 
+		return res.json({
+			success: true,
 			path: uploadPath,
 			message: "File uploaded successfully"
 		});
@@ -209,8 +209,8 @@ router.post("/generate-custom-report", (req, res) => {
 
 		const report = eval(`\`${templateString}\``);
 
-		return res.json({ 
-			success: true, 
+		return res.json({
+			success: true,
 			report,
 			generatedAt: new Date()
 		});

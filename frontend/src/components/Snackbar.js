@@ -26,7 +26,13 @@ const SnackBar = () => {
 			TransitionProps={{ direction: "left" }}
 			onClose={handleClose}
 		>
-			<Alert severity={severity} variant="filled" sx={{ alignItems: "center", color: "white!important" }} onClose={handleClose}>
+			<Alert
+				severity={severity}
+				variant="filled"
+				sx={{ alignItems: "center", color: "white!important" }}
+				onClose={handleClose}
+				data-testid={severity === "success" ? "profile-success-message" : severity === "error" ? "profile-error-message" : undefined}
+			>
 				<Typography>{message}</Typography>
 			</Alert>
 		</MaterialSnackbar>

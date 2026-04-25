@@ -69,4 +69,7 @@ export const inviteUser = (email) => api.post("user", { email });
 export const removeUser = (id) => api.post("user/delete", { id });
 export const getUsersData = () => api.get("user");
 export const submitUserRole = (userId, role) => api.post("user/role", { id: userId, role });
+export const getProfile = () => api.get("user/profile");
+export const updateProfile = (profile) => api.put("user/profile", profile);
+export const changePassword = (currentPassword, newPassword) => api.put("user/profile/password", { currentPassword, newPassword });
 export const getData = () => api.get("data");
