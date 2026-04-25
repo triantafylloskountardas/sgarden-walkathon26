@@ -109,7 +109,14 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 			testId: "sidebar-map-link",
 		},
 		{
-			text: "Reports",
+			text: t("sidebar.salesData"),
+			handler: () => {
+				navigate("/data/manage");
+			},
+			testId: "sidebar-sales-data-link",
+		},
+		{
+			text: t("sidebar.reports"),
 			handler: () => {
 				navigate("/reports");
 			},
