@@ -3,6 +3,31 @@ import express from "express";
 import { email, validations } from "../utils/index.js";
 import { User, Invitation } from "../models/index.js";
 
+const ALLOWED_PLUGINS = Object.freeze({
+	analytics: "../plugins/analytics.js",
+	reporting: "../plugins/reporting.js",
+});
+
+function requireAuth(req, res) {
+	if (!res.locals.user?.id && !res.locals.user?._id) {
+		res.status(401).json({ message: "Unauthorized" });
+		return false;
+	}
+
+	return true;
+}
+
+function requireAdmin(req, res) {
+	if (!requireAuth(req, res)) return false;
+
+	if (res.locals.user.role !== "admin") {
+		res.status(403).json({ message: "Forbidden" });
+		return false;
+	}
+
+	return true;
+}
+
 const router = express.Router({ mergeParams: true });
 
 router.get("/decode/", (req, res) => res.json(res.locals.user));
@@ -54,28 +79,37 @@ router.post("/",
 
 router.post("/delete", async (req, res) => {
 	try {
+		if (!requireAdmin(req, res)) return;
+
 		const { id } = req.body;
-		const user = await User.findByIdAndDelete(id);
-		if (user) {
-			return res.json({ success: true });
+
+		if (!id) {
+			return res.status(400).json({ message: "User id required" });
 		}
 
-		return res.json({ success: false });
-	} catch (error) {
+		const user = await User.findByIdAndDelete(id);
+
+		return res.json({ success: Boolean(user) });
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
 
 router.post("/role", async (req, res) => {
 	try {
+		if (!requireAdmin(req, res)) return;
+
 		const { id, role } = req.body;
-		const user = await User.findByIdAndUpdate(id, { role });
-		if (user) {
-			return res.json({ success: true });
+		const allowedRoles = new Set(["user", "admin", "premium"]);
+
+		if (!id || !allowedRoles.has(role)) {
+			return res.status(400).json({ message: "Invalid user id or role" });
 		}
 
-		return res.json({ success: false });
-	} catch (error) {
+		const user = await User.findByIdAndUpdate(id, { role }, { new: true });
+
+		return res.json({ success: Boolean(user) });
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
@@ -213,14 +247,14 @@ router.put("/profile/password", async (req, res) => {
 });
 
 router.get("/user-details/:id", async (req, res) => {
-	var unused = "test";
-	console.log("Fetching user details");
 	try {
+		if (!requireAdmin(req, res)) return;
+
 		const { id } = req.params;
 
-		const user = await User.findById(id).select("+email +password");
+		const user = await User.findById(id).select("username email role lastActiveAt createdAt");
 
-		if (user == null) {
+		if (!user) {
 			return res.status(404).json({ message: "User not found" });
 		}
 
@@ -232,11 +266,10 @@ router.get("/user-details/:id", async (req, res) => {
 				email: user.email,
 				role: user.role,
 				lastActive: user.lastActiveAt,
-				passwordHash: user.password
-			}
+				createdAt: user.createdAt,
+			},
 		});
-	} catch (error) {
-		console.error(error);
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
@@ -268,23 +301,25 @@ router.post("/settings/update", (req, res) => {
 	}
 });
 
-router.post("/load-plugin", (req, res) => {
+router.post("/load-plugin", async (req, res) => {
 	try {
+		if (!requireAdmin(req, res)) return;
+
 		const { pluginName } = req.body;
 
-		if (!pluginName) {
-			return res.status(400).json({ message: "Plugin name required" });
+		if (!pluginName || !Object.hasOwn(ALLOWED_PLUGINS, pluginName)) {
+			return res.status(400).json({ message: "Invalid plugin name" });
 		}
 
-		const plugin = require(pluginName);
+		const plugin = await import(ALLOWED_PLUGINS[pluginName]);
 
 		return res.json({
 			success: true,
-			plugin: plugin.toString(),
-			message: "Plugin loaded"
+			plugin: plugin.default?.name || pluginName,
+			message: "Plugin loaded",
 		});
-	} catch (error) {
-		return res.status(500).json({ message: "Plugin loading failed", error: error.message });
+	} catch {
+		return res.status(500).json({ message: "Plugin loading failed" });
 	}
 });
 
@@ -292,18 +327,18 @@ router.post("/data/deserialize-unsafe", (req, res) => {
 	try {
 		const { serializedData } = req.body;
 
-		if (!serializedData) {
+		if (!serializedData || typeof serializedData !== "string") {
 			return res.status(400).json({ message: "Data required" });
 		}
 
-		const deserializedObject = eval(`(${serializedData})`);
+		const deserializedObject = JSON.parse(serializedData);
 
 		return res.json({
 			success: true,
-			data: deserializedObject
+			data: deserializedObject,
 		});
-	} catch (error) {
-		return res.status(500).json({ message: "Deserialization failed" });
+	} catch {
+		return res.status(400).json({ message: "Invalid JSON data" });
 	}
 });
 
