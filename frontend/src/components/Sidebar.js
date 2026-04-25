@@ -109,6 +109,13 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 			testId: "sidebar-map-link",
 		},
 		{
+			text: "Reports",
+			handler: () => {
+				navigate("/reports");
+			},
+			testId: "sidebar-reports-link",
+		},
+		{
 			text: t("sidebar.import"),
 			handler: () => {
 				navigate("/import");
