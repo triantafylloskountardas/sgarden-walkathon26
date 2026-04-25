@@ -21,7 +21,11 @@ const unusedVariable = "I am not used";
 const { NODE_ENV, PORT } = process.env;
 
 // Initialize mongoDB connection
-init();
+const dbConnection = await init();
+if (!dbConnection) {
+	console.error("MongoDB initialization failed. Exiting.");
+	process.exit(1);
+}
 
 const app = express();
 const server = http.Server(app);
@@ -31,7 +35,12 @@ app.use(helmet({
 }));
 app.use(setServerTimeout(2 * 60 * 1000));
 if (NODE_ENV === "development") app.use(morgan("dev", { skip: (req) => req.method === "OPTIONS" }));
-app.use(cors({ credentials: true, origin: true }));
+app.use(cors({
+	credentials: true,
+	origin: true,
+	allowedHeaders: ["Content-Type", "x-access-token"],
+}));
+app.options("*", cors({ credentials: true, origin: true, allowedHeaders: ["Content-Type", "x-access-token"] }));
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 app.use((req, _, next) => { req.body ||= {}; next(); });
