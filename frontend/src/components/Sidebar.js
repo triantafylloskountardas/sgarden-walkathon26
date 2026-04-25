@@ -19,49 +19,49 @@ const useStyles = makeStyles((theme) => ({
 	},
 }));
 
-const ButtonWithText = ({ text, icon, more, handler }) => (
+const ButtonWithText = ({ text, icon, more, handler, testId }) => (
 	<span key={text}>
 		{!more
-		&& (
-			<Button key={text} sx={{ width: "100%", display: "flex", flexDirection: "row", justifyContent: "flex-start", padding: "8px 40px 8px 16px" }} onClick={(event) => handler(event)}>
-				{icon && (<Image src={icon} alt={text} fit="contain" width="25px" />)}
-				<Typography align="center" color="white.main" fontSize="medium" ml={1} display="flex" alignItems="center" sx={{ textTransform: "capitalize" }}>
-					{text}
-					{more && <ExpandMore />}
-				</Typography>
-			</Button>
-		)}
+			&& (
+				<Button key={text} data-testid={testId} sx={{ width: "100%", display: "flex", flexDirection: "row", justifyContent: "flex-start", padding: "8px 40px 8px 16px" }} onClick={(event) => handler(event)}>
+					{icon && (<Image src={icon} alt={text} fit="contain" width="25px" />)}
+					<Typography align="center" color="white.main" fontSize="medium" ml={1} display="flex" alignItems="center" sx={{ textTransform: "capitalize" }}>
+						{text}
+						{more && <ExpandMore />}
+					</Typography>
+				</Button>
+			)}
 		{more
-		&& (
-			<Accordion
-				key={text}
-				title={(
-					<Grid item sx={{ width: "100%", display: "flex", flexDirection: "row", justifyContent: "flex-start" }}>
-						<Image src={icon} alt={text} fit="contain" width="25px" />
-						<Typography align="center" color="white.main" fontSize="medium" ml={1} display="flex" alignItems="center" sx={{ textTransform: "capitalize" }}>
-							{text}
-						</Typography>
-					</Grid>
-				)}
-				content={(
-					<Grid container flexDirection="column" width="100%">
-						{more.map((el) => (
-							<Button key={el.title} color="white" onClick={el.handler}>
-								<Typography sx={{ textTransform: "capitalize" }}>{el.title}</Typography>
-							</Button>
-						))}
-					</Grid>
-				)}
-				alwaysExpanded={false}
-				titleBackground="transparent"
-				expandIconColor="white"
-			/>
-		)}
+			&& (
+				<Accordion
+					key={text}
+					title={(
+						<Grid item sx={{ width: "100%", display: "flex", flexDirection: "row", justifyContent: "flex-start" }}>
+							<Image src={icon} alt={text} fit="contain" width="25px" />
+							<Typography align="center" color="white.main" fontSize="medium" ml={1} display="flex" alignItems="center" sx={{ textTransform: "capitalize" }}>
+								{text}
+							</Typography>
+						</Grid>
+					)}
+					content={(
+						<Grid container flexDirection="column" width="100%">
+							{more.map((el) => (
+								<Button key={el.title} color="white" onClick={el.handler}>
+									<Typography sx={{ textTransform: "capitalize" }}>{el.title}</Typography>
+								</Button>
+							))}
+						</Grid>
+					)}
+					alwaysExpanded={false}
+					titleBackground="transparent"
+					expandIconColor="white"
+				/>
+			)}
 	</span>
 );
 
-const ButtonSimple = ({ text, icon, handler, ind }) => (
-	<Button key={text} sx={{ minWidth: "30px!important", padding: "0px", marginTop: (ind === 0) ? "0px" : "10px" }} onClick={(event) => handler(event)}>
+const ButtonSimple = ({ text, icon, handler, ind, testId }) => (
+	<Button key={text} data-testid={testId} sx={{ minWidth: "30px!important", padding: "0px", marginTop: (ind === 0) ? "0px" : "10px" }} onClick={(event) => handler(event)}>
 		<Image src={icon} alt={text} fit="contain" width="30px" />
 	</Button>
 );
@@ -100,6 +100,13 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 				navigate("/dashboard2");
 			},
 		},
+		{
+			text: "Import",
+			handler: () => {
+				navigate("/import");
+			},
+			testId: "sidebar-import-link",
+		},
 	];
 
 	return (
@@ -111,6 +118,7 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 					text={button.text}
 					handler={button.handler}
 					more={button.more}
+					testId={button.testId}
 				/>
 			))}
 			{isSmall && buttons.map((button, ind) => (
@@ -121,6 +129,7 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 					handler={button.handler}
 					more={button.more}
 					ind={ind}
+					testId={button.testId}
 				/>
 			))}
 		</div>

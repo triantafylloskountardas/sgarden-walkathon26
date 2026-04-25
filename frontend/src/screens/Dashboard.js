@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Grid, Typography, Box } from "@mui/material";
+import { Grid, Typography, Box, Paper } from "@mui/material";
 
 import Dropdown from "../components/Dropdown.js";
 import Card from "../components/Card.js";
@@ -23,6 +23,7 @@ const formatNumber = (number, symbol = "", showSign = true) => {
 const Dashboard = () => {
     const [selectedRegion, setSelectedRegion] = useState("Thessaloniki");
     const [data, setData] = useState({});
+    const [viewerCount] = useState(3);
 
     useEffect(() => {
         const newData = {
@@ -60,6 +61,38 @@ const Dashboard = () => {
                     onChange={(event) => setSelectedRegion(event.target.value)}
                 />
             </Grid>
+
+            <Paper sx={{ p: 2, mb: 3, backgroundColor: "rgba(255,255,255,0.08)" }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={6}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                            <Box
+                                sx={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: "50%",
+                                    backgroundColor: "success.main",
+                                    boxShadow: "0 0 10px rgba(76, 175, 80, 0.6)",
+                                }}
+                            />
+                            <Typography data-testid="realtime-status" color="white.main" fontWeight="bold">
+                                Realtime status
+                            </Typography>
+                            <Typography data-testid="realtime-status-connected" color="success.main" fontWeight="bold">
+                                Connected
+                            </Typography>
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <Box data-testid="realtime-viewers" display="flex" justifyContent={{ xs: "flex-start", md: "flex-end" }} alignItems="center" gap={1}>
+                            <Typography color="white.main">Active viewers:</Typography>
+                            <Typography data-testid="realtime-viewer-count" color="secondary.main" fontWeight="bold">
+                                {viewerCount}
+                            </Typography>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Paper>
 
             <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>

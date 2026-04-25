@@ -73,3 +73,4 @@ export const getProfile = () => api.get("user/profile");
 export const updateProfile = (profile) => api.put("user/profile", profile);
 export const changePassword = (currentPassword, newPassword) => api.put("user/profile/password", { currentPassword, newPassword });
 export const getData = () => api.get("data");
+export const importData = (records) => api.post("data/import", { records });

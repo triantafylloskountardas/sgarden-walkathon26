@@ -7,7 +7,8 @@ import {
 	statSync,
 	mkdirSync,
 } from "fs";
-import { resolve, relative, sep, basename, extname } from "path";
+import { resolve, relative, sep, basename, extname, join } from "path";
+import { ImportRecord } from "../models/index.js";
 
 const router = express.Router({ mergeParams: true });
 
@@ -158,6 +159,88 @@ router.post("/upload-file", (req, res) => {
 		});
 	} catch {
 		return res.status(400).json({ message: "Invalid upload path" });
+	}
+});
+
+router.post("/import", async (req, res) => {
+	try {
+		const { records } = req.body;
+		if (!Array.isArray(records)) {
+			return res.status(400).json({ message: "Import payload must include an array of records." });
+		}
+
+		const errors = [];
+		const validRecords = [];
+
+		records.forEach((original, index) => {
+			const record = typeof original === "object" && original !== null ? original : { value: String(original) };
+			const rowErrors = [];
+
+			const hasAnyValue = Object.keys(record).some((key) => {
+				const value = record[key];
+				return value !== undefined && value !== null && String(value).trim() !== "";
+			});
+
+			if (!hasAnyValue) {
+				rowErrors.push("Row has no values.");
+			}
+
+			if (hasAnyValue && record.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(record.email))) {
+				rowErrors.push("Email must be valid.");
+			}
+
+			const numericFields = ["amount", "value", "quantity", "price"];
+			numericFields.forEach((field) => {
+				if (record[field] != null && record[field] !== "" && Number.isNaN(Number(record[field]))) {
+					rowErrors.push(`${field} must be numeric.`);
+				}
+			});
+
+			["date", "timestamp"].forEach((field) => {
+				if (record[field] != null && record[field] !== "") {
+					const parsed = new Date(record[field]);
+					if (Number.isNaN(parsed.getTime())) {
+						rowErrors.push(`${field} must be a valid date.`);
+					}
+				}
+			});
+
+			if (rowErrors.length) {
+				errors.push({ index, message: rowErrors.join(" "), row: record });
+				return;
+			}
+
+			validRecords.push({
+				raw: record,
+				label: record.label || record.name || null,
+				category: record.category || null,
+				amount: record.amount != null ? Number(record.amount) : record.value != null ? Number(record.value) : null,
+				date: record.date ? new Date(record.date) : record.timestamp ? new Date(record.timestamp) : null,
+				email: record.email || null,
+				notes: record.notes || null,
+				importedBy: res.locals?.user?._id || null,
+			});
+		});
+
+		const inserted = validRecords.length ? await ImportRecord.insertMany(validRecords, { ordered: false }) : [];
+
+		return res.json({
+			success: true,
+			insertedCount: inserted.length,
+			errors,
+		});
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ message: "Unable to import records." });
+	}
+});
+
+router.get("/imported", async (req, res) => {
+	try {
+		const records = await ImportRecord.find().sort({ importedAt: -1 }).limit(100).lean();
+		return res.json({ success: true, records });
+	} catch {
+		return res.status(500).json({ message: "Unable to load imported records." });
 	}
 });
 
