@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Box, Button, GlobalStyles, Grid, Paper, Typography } from "@mui/material";
 
@@ -32,22 +32,59 @@ const printableStyles = {
 		margin: "14mm 12mm",
 	},
 	"@media print": {
-		"body": {
+		"html, body, #root, main": {
+			height: "auto !important",
+			overflow: "visible !important",
 			background: "#ffffff !important",
 		},
-		"body *": {
-			visibility: "hidden",
+		"body.report-print-mode": {
+			background: "#ffffff !important",
+			"-webkit-print-color-adjust": "exact",
+			printColorAdjust: "exact",
 		},
-		"#report-print-root, #report-print-root *": {
-			visibility: "visible",
+		"#header, #footer": {
+			display: "none !important",
+		},
+		"[data-testid='app-sidebar']": {
+			display: "none !important",
+		},
+		"[data-layout='protected-main']": {
+			position: "static !important",
+			height: "auto !important",
+			width: "100% !important",
+			background: "#ffffff !important",
+		},
+		"[data-layout='protected-content']": {
+			position: "static !important",
+			display: "block !important",
+			height: "auto !important",
+			width: "100% !important",
+			margin: "0 !important",
+			padding: "0 !important",
+			overflow: "visible !important",
+		},
+		"[data-testid='report-view-print']": {
+			display: "none !important",
 		},
 		"#report-print-root": {
-			position: "absolute",
-			left: 0,
-			top: 0,
-			width: "100%",
+			position: "static !important",
+			width: "auto !important",
 			maxWidth: "190mm",
 			margin: "0 auto",
+		},
+		"[data-testid='report-view-page']": {
+			padding: "0 !important",
+			width: "100% !important",
+		},
+		"#report-print-root .MuiPaper-root": {
+			boxShadow: "none !important",
+		},
+		".js-plotly-plot, .plot-container, .svg-container": {
+			width: "100% !important",
+			maxWidth: "100% !important",
+		},
+		".main-svg": {
+			maxWidth: "100% !important",
 		},
 	},
 };
@@ -207,6 +244,27 @@ const ReportView = () => {
 	const dateRangeLabel = report ? `${report.dateFrom} to ${report.dateTo}` : "";
 	const commentaryText = report?.commentary?.trim() || "No commentary provided.";
 
+	useEffect(() => {
+		const clearPrintMode = () => {
+			document.body.classList.remove("report-print-mode");
+		};
+
+		window.addEventListener("afterprint", clearPrintMode);
+
+		return () => {
+			window.removeEventListener("afterprint", clearPrintMode);
+			clearPrintMode();
+		};
+	}, []);
+
+	const handlePrint = useCallback(() => {
+		document.body.classList.add("report-print-mode");
+
+		window.setTimeout(() => {
+			window.print();
+		}, 150);
+	}, []);
+
 	if (!report) {
 		return (
 			<Box data-testid="report-view-page" sx={{ p: 3, width: "100%" }}>
@@ -271,7 +329,7 @@ const ReportView = () => {
 							data-testid="report-view-print"
 							variant="contained"
 							color="secondary"
-							onClick={() => window.print()}
+							onClick={handlePrint}
 							sx={{
 								alignSelf: { xs: "stretch", md: "center" },
 								px: 3,

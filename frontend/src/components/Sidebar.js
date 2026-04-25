@@ -132,7 +132,7 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 	];
 
 	return (
-		<div className={classes.sidebar} style={{ width: (isSmall) ? "50px" : "200px", padding: (isSmall) ? "20px 5px" : "20px 5px", textAlign: "center" }}>
+		<div data-testid="app-sidebar" className={classes.sidebar} style={{ width: (isSmall) ? "50px" : "200px", padding: (isSmall) ? "20px 5px" : "20px 5px", textAlign: "center" }}>
 			{!isSmall && buttons.map((button) => (
 				<ButtonWithText
 					key={button.text}

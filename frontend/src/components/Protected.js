@@ -45,9 +45,9 @@ const Protected = ({ c }) => {
 
 	return jwt.isAuthenticated()
 		? (
-			<div className={classes.main}>
+			<div className={classes.main} data-layout="protected-main">
 				<Sidebar isSmall={isSmall} />
-				<div className={classes.mainBox} style={{ width: (isSmall) ? "calc(100% - 50px)" : "calc(100% - 200px)", marginLeft: (isSmall) ? "50px" : "200px" }}>
+				<div className={classes.mainBox} data-layout="protected-content" style={{ width: (isSmall) ? "calc(100% - 50px)" : "calc(100% - 200px)", marginLeft: (isSmall) ? "50px" : "200px" }}>
 					<div className="header-container">
 						{c}
 					</div>
@@ -61,4 +61,3 @@ Protected.propTypes = { c: PropTypes.node.isRequired };
 Protected.whyDidYouRender = true;
 
 export default maybeSetToken(Protected);
-
