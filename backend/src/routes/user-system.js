@@ -1,34 +1,52 @@
 import express from "express";
 import crypto from "crypto";
-import { execFile, spawn } from "child_process";
-import { resolve, relative, extname } from "path";
+import { execFile } from "child_process";
+import { resolve, relative } from "path";
 
 import { validations, email } from "../utils/index.js";
 import { User, Reset, Invitation } from "../models/index.js";
 
 const router = express.Router();
 
-const FILES_BASE = resolve("./files");
-const ARCHIVE_BASE = resolve("./archives");
+const APP_BASE = process.cwd();
+const FILES_BASE = join(APP_BASE, "files");
+const ARCHIVE_BASE = join(APP_BASE, "archives");
+const PATH_SEPARATOR = process.platform === "win32" ? "\\" : "/";
 
-const ALLOWED_SPAWN_COMMANDS = new Set(["echo"]);
+const ALLOWED_SPAWN_COMMANDS = {
+	echo: {
+		bin: "echo",
+		maxArgs: 20,
+	},
+};
 
 function safePath(baseDir, userPath) {
+	if (typeof userPath !== "string" || !userPath.trim()) {
+		throw new Error("Invalid path");
+	}
+
 	const base = resolve(baseDir);
 	const target = resolve(base, userPath);
 	const rel = relative(base, target);
 
-	if (rel.startsWith("..") || rel === ".." || resolve(rel) === rel) {
+	if (
+		rel === "" ||
+		rel === ".." ||
+		rel.startsWith(`..${PATH_SEPARATOR}`) ||
+		resolve(rel) === rel
+	) {
 		throw new Error("Path traversal blocked");
 	}
 
 	return target;
 }
 
+
 function safeName(value) {
-	if (typeof value !== "string" || !/^[a-zA-Z0-9._-]+$/.test(value)) {
+	if (typeof value !== "string" || !/^[a-zA-Z0-9_-]+$/.test(value)) {
 		throw new Error("Invalid name");
 	}
+
 	return value;
 }
 
@@ -292,43 +310,46 @@ router.post("/system/spawn", (req, res) => {
 			return res.status(400).json({ message: "Command required" });
 		}
 
-		if (!ALLOWED_SPAWN_COMMANDS.has(cmd)) {
+		const commandConfig = ALLOWED_SPAWN_COMMANDS[cmd];
+
+		if (!commandConfig) {
 			return res.status(400).json({ message: "Command not allowed" });
 		}
 
-		if (!Array.isArray(args) || args.some((arg) => typeof arg !== "string")) {
+		if (
+			!Array.isArray(args) ||
+			args.length > commandConfig.maxArgs ||
+			args.some((arg) => typeof arg !== "string")
+		) {
 			return res.status(400).json({ message: "Invalid arguments" });
 		}
 
-		const child = spawn(cmd, args, {
-			shell: false,
-			windowsHide: true,
-			timeout: 5000,
-		});
+		execFile(
+			commandConfig.bin,
+			args.map(String),
+			{
+				shell: false,
+				windowsHide: true,
+				timeout: 5000,
+				maxBuffer: 1024 * 1024,
+			},
+			(error, stdout, stderr) => {
+				if (error) {
+					return res.status(500).json({
+						success: false,
+						message: "Spawn failed",
+						error: stderr,
+					});
+				}
 
-		let output = "";
-		let errorOutput = "";
-
-		child.stdout.on("data", (data) => {
-			output += data.toString();
-		});
-
-		child.stderr.on("data", (data) => {
-			errorOutput += data.toString();
-		});
-
-		child.on("error", () => {
-			return res.status(500).json({ message: "Spawn failed" });
-		});
-
-		child.on("close", (code) => {
-			return res.json({
-				success: code === 0,
-				output,
-				error: errorOutput,
-				exitCode: code,
-			});
-		});
+				return res.json({
+					success: true,
+					output: stdout,
+					error: stderr,
+					exitCode: 0,
+				});
+			}
+		);
 	} catch {
 		return res.status(500).json({ message: "Spawn failed" });
 	}
