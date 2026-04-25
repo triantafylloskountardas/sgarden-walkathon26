@@ -216,6 +216,13 @@ const getSearchItems = (isAdmin, t) => [
 		path: "/users",
 		category: t("search.category.admin"),
 		keywords: ["users", "admin", "roles", "permissions"],
+	}, {
+		id: "audit",
+		title: t("search.item.audit.title"),
+		description: t("search.item.audit.description"),
+		path: "/admin/audit",
+		category: t("search.category.admin"),
+		keywords: ["audit", "admin", "security", "trail", "logs"],
 	}] : []),
 ];
 

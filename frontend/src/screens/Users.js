@@ -14,6 +14,7 @@ import Dropdown from "../components/Dropdown.js";
 import { isFuzzyMatch, useSnackbar, dayjs } from "../utils/index.js";
 import { getUsersData, inviteUser, removeUser, submitUserRole } from "../api/index.js";
 import { jwt } from "../utils/index.js";
+import { appendAuditEntry } from "../utils/audit-trail.js";
 
 const Users = () => {
 	const { error, success } = useSnackbar();
@@ -23,8 +24,6 @@ const Users = () => {
 	const [filteredUsers, setFilteredUsers] = useState(users);
 	const [popupOpen, setPopupOpen] = useState(false);
 	const [deleteUser, setDeleteUser] = useState({ id: null, username: null });
-
-	const role = jwt.decode().role;
 
 	const fetchData = useCallback(
 		async () => {
@@ -53,6 +52,12 @@ const Users = () => {
 			const { success: successCode, message } = await inviteUser(values.email);
 
 			if (successCode) {
+				appendAuditEntry({
+					admin: jwt.decode()?.username || "admin",
+					action: "invite_user",
+					target: values.email,
+					description: `Invited user ${values.email}`,
+				});
 				success(message);
 				setPopupOpen(false);
 			} else {
@@ -68,6 +73,12 @@ const Users = () => {
 
 		const { success: successCode } = await removeUser(deleteUser?.id);
 		if (successCode) {
+			appendAuditEntry({
+				admin: jwt.decode()?.username || "admin",
+				action: "delete_user",
+				target: deleteUser?.username || deleteUser?.id,
+				description: `Deleted user ${deleteUser?.username || deleteUser?.id}`,
+			});
 			success("User deleted!");
 		} else {
 			error();
@@ -85,6 +96,13 @@ const Users = () => {
 			const { success: successCode } = await submitUserRole(userId, newRole);
 
 			if (successCode) {
+				const targetUser = users.find((user) => user._id === userId);
+				appendAuditEntry({
+					admin: jwt.decode()?.username || "admin",
+					action: "change_role",
+					target: targetUser?.username || userId,
+					description: `Changed role for ${targetUser?.username || userId} to ${newRole}`,
+				});
 				success("Role changed successfully!");
 			} else {
 				error("Role change failed!");
@@ -233,7 +251,7 @@ const Users = () => {
 											<Grid item xs={1} textAlign="center">
 												<Dropdown
 													items={["user", "admin"].map((role) => ({ value: role, text: role }))}
-													value={role}
+													value={us.role}
 													onChange={(event) => submitRole(us._id, event.target.value)}
 												/>
 											</Grid>

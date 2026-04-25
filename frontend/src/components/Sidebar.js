@@ -82,6 +82,12 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 			handler: () => {
 				navigate("/users");
 			},
+		}, {
+			text: t("sidebar.audit"),
+			handler: () => {
+				navigate("/admin/audit");
+			},
+			testId: "sidebar-audit-link",
 		}] : []),
 		{
 			text: t("sidebar.overview"),
