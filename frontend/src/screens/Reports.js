@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import {
 	Box,
 	Button,
@@ -28,7 +28,6 @@ const initialWizardState = {
 };
 
 const Reports = () => {
-	const navigate = useNavigate();
 	const [reports, setReports] = useState(() => readReports());
 	const [wizardOpen, setWizardOpen] = useState(false);
 	const [previewOpen, setPreviewOpen] = useState(false);
@@ -77,7 +76,6 @@ const Reports = () => {
 		const nextReports = [...reports, report];
 		persistReports(nextReports);
 		resetWizard();
-		navigate(`/reports/${report.id}`);
 	};
 
 	const handleDeleteReport = (reportId) => {

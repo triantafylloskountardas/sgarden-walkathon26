@@ -8,7 +8,7 @@ const ALLOWED_PLUGINS = Object.freeze({
 	reporting: "../plugins/reporting.js",
 });
 
-function requireAuth(req, res) {
+function requireAuth(res) {
 	if (!res.locals.user?.id && !res.locals.user?._id) {
 		res.status(401).json({ message: "Unauthorized" });
 		return false;
@@ -17,8 +17,8 @@ function requireAuth(req, res) {
 	return true;
 }
 
-function requireAdmin(req, res) {
-	if (!requireAuth(req, res)) return false;
+function requireAdmin(res) {
+	if (!requireAuth(res)) return false;
 
 	if (res.locals.user.role !== "admin") {
 		res.status(403).json({ message: "Forbidden" });
@@ -38,7 +38,7 @@ router.get("/", async (req, res) => {
 	try {
 		const users = await User.find();
 		return res.json({ success: true, users });
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
@@ -69,7 +69,7 @@ router.post("/",
 				success: true,
 				message: "Invitation e-mail sent",
 			});
-		} catch (error) {
+		} catch {
 			return res.json({
 				success: false,
 				message: error.body,
@@ -79,7 +79,7 @@ router.post("/",
 
 router.post("/delete", async (req, res) => {
 	try {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(res)) return;
 
 		const { id } = req.body;
 
@@ -97,7 +97,7 @@ router.post("/delete", async (req, res) => {
 
 router.post("/role", async (req, res) => {
 	try {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(res)) return;
 
 		const { id, role } = req.body;
 		const allowedRoles = new Set(["user", "admin", "premium"]);
@@ -135,7 +135,7 @@ router.get("/profile/:userId", async (req, res) => {
 				lastActive: user.lastActiveAt,
 			}
 		});
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
@@ -158,7 +158,7 @@ router.get("/profile", async (req, res) => {
 				lastActive: user.lastActiveAt,
 			},
 		});
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
@@ -206,7 +206,7 @@ router.put("/profile", async (req, res) => {
 				lastActive: user.lastActiveAt,
 			},
 		});
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
@@ -241,14 +241,14 @@ router.put("/profile/password", async (req, res) => {
 		await user.save();
 
 		return res.json({ success: true, message: "Password updated successfully." });
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
 
 router.get("/user-details/:id", async (req, res) => {
 	try {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(res)) return;
 
 		const { id } = req.params;
 
@@ -276,34 +276,51 @@ router.get("/user-details/:id", async (req, res) => {
 
 router.post("/settings/update", (req, res) => {
 	try {
-		const userId = res.locals.user.id;
+		if (!requireAuth(res)) return;
+
+		const userId = res.locals.user.id || res.locals.user._id;
 		const userSettings = req.body;
 
-		if (!userSettings || typeof userSettings !== 'object') {
+		if (!userSettings || typeof userSettings !== "object" || Array.isArray(userSettings)) {
 			return res.status(400).json({ message: "Settings object required" });
 		}
 
 		const defaultSettings = {
 			theme: "light",
 			language: "en",
-			notifications: true
+			notifications: true,
 		};
 
-		const finalSettings = Object.assign({}, defaultSettings, userSettings);
+		const allowedSettings = {
+			theme: ["light", "dark"],
+			language: ["en", "el"],
+			notifications: [true, false],
+		};
+
+		const finalSettings = { ...defaultSettings };
+
+		for (const [key, value] of Object.entries(userSettings)) {
+			if (
+				Object.hasOwn(allowedSettings, key) &&
+				allowedSettings[key].includes(value)
+			) {
+				finalSettings[key] = value;
+			}
+		}
 
 		return res.json({
 			success: true,
 			settings: finalSettings,
-			userId
+			userId,
 		});
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Something went wrong." });
 	}
 });
 
 router.post("/load-plugin", async (req, res) => {
 	try {
-		if (!requireAdmin(req, res)) return;
+		if (!requireAdmin(res)) return;
 
 		const { pluginName } = req.body;
 
@@ -423,7 +440,7 @@ router.post("/advanced-search", async (req, res) => {
 		}
 
 		return res.json({ success: true, results });
-	} catch (error) {
+	} catch {
 		return res.status(500).json({ message: "Error" });
 	}
 });

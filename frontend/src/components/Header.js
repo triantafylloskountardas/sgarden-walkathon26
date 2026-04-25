@@ -136,6 +136,15 @@ const writeRecentSearches = (recentSearches) => {
 	}
 };
 
+const createRecentSearchEntry = (query, fallbackItem) => ({
+	id: `recent-${query.toLowerCase()}`,
+	title: `Search: ${query}`,
+	description: fallbackItem?.description || `Recent search for "${query}"`,
+	path: fallbackItem?.path || "/dashboard",
+	category: fallbackItem?.category || "Recent",
+	keywords: [query.toLowerCase()],
+});
+
 const getSearchItems = (isAdmin, t) => [
 	{
 		id: "dashboard-overview",
@@ -280,7 +289,10 @@ const Header = ({ isAuthenticated }) => {
 	const handleLanguageMenuOpen = (event) => setLanguageAnchorEl(event.currentTarget);
 	const handleLanguageMenuClose = () => setLanguageAnchorEl(null);
 	const openSearch = () => setSearchOpen(true);
-	const closeSearch = () => {
+	const closeSearch = (trackQuery = true) => {
+		if (trackQuery && searchValue.trim()) {
+			pushRecentSearch(createRecentSearchEntry(searchValue.trim(), filteredResults[0]));
+		}
 		setSearchOpen(false);
 		setSearchValue("");
 	};
@@ -298,7 +310,7 @@ const Header = ({ isAuthenticated }) => {
 	const navigateFromSearch = (item) => {
 		pushRecentSearch(item);
 		navigate(item.path);
-		closeSearch();
+		closeSearch(false);
 	};
 
 	useEffect(() => {
