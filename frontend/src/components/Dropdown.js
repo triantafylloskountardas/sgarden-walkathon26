@@ -177,11 +177,13 @@ const Dropdown = ({
 	items = [],
 	value,
 	onChange,
+	testId,
 }) => {
 	const classes = useStyles({ background });
 	return (
 		<Select
 			id={id}
+			data-testid={testId}
 			value={value}
 			displayEmpty={showPlaceholder}
 			className={classes[`custom_${(filled ? "filled" : "outlined")}`]}

@@ -20,6 +20,7 @@ const Plot = ({
 	background: plotBackground = "white",
 	marginBottom: plotMarginBottom = 80,
 	annotations: plotAnnotations = [],
+	shapes: plotShapes = [],
 }) => {
 	const [data, setData] = useState(plotData);
 	const [title, setTitle] = useState(plotTitle);
@@ -35,6 +36,7 @@ const Plot = ({
 	const [background, setBackground] = useState(plotBackground);
 	const [marginBottom, setMarginBottom] = useState(plotMarginBottom);
 	const [annotations, setAnnotations] = useState(plotAnnotations);
+	const [shapes, setShapes] = useState(plotShapes);
 
 	useEffect(() => {
 		setData(plotData);
@@ -92,6 +94,10 @@ const Plot = ({
 		setAnnotations(plotAnnotations);
 	}, [plotAnnotations]);
 
+	useEffect(() => {
+		setShapes(plotShapes);
+	}, [plotShapes]);
+
 	return (
 		<Plotly
 			data={data.map((d) => ({
@@ -124,6 +130,7 @@ const Plot = ({
 				plot_bgcolor: colors?.[background] || background,
 				margin: { t: title ? 60 : 40, l: 40, b: marginBottom, ...(!showLegend && { r: 40 }) },
 				annotations,
+				shapes,
 				xaxis: { tickangle: -45 },
 			}}
 			config={{

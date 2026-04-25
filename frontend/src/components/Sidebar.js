@@ -107,6 +107,13 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 			},
 			testId: "sidebar-import-link",
 		},
+		{
+			text: "Alerts",
+			handler: () => {
+				navigate("/alerts");
+			},
+			testId: "sidebar-alerts-link",
+		},
 	];
 
 	return (

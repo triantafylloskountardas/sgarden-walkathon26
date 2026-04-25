@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Grid, Typography, Box, Button, TextField } from "@mui/material";
+import { Grid, Typography, Box } from "@mui/material";
 import Dropdown from "../components/Dropdown.js";
 import Card from "../components/Card.js";
 import Plot from "../components/Plot.js";
@@ -7,6 +7,7 @@ import DatePicker from "../components/DatePicker.js";
 import Map from "../components/Map.js";
 
 import colors from "../_colors.scss";
+import { findThresholdForMetric, readAlerts } from "../utils/alerts.js";
 
 const availableRegions = ["Thessaloniki", "Athens", "Patras"];
 const availableMetrics = ["Revenue", "Expenses", "Profit", "Growth Rate"];
@@ -57,6 +58,23 @@ const Dashboard = () => {
         changeKeyMetricData();
         changePlotData(fromDate, toDate);
     }, [selectedRegion]);
+
+    const activeRevenueAlert = findThresholdForMetric(readAlerts(), "Revenue");
+    const revenueThreshold = activeRevenueAlert ? Number(activeRevenueAlert.threshold) : 15;
+    const revenueThresholdShapes = [{
+        type: "line",
+        xref: "paper",
+        x0: 0,
+        x1: 1,
+        yref: "y",
+        y0: revenueThreshold,
+        y1: revenueThreshold,
+        line: {
+            color: colors.error,
+            width: 3,
+            dash: "dash",
+        },
+    }];
 
     return (
         <Grid container py={2} flexDirection="column">
@@ -165,80 +183,99 @@ const Dashboard = () => {
                         </Box>
                         <Grid container spacing={1} width="100%">
                             <Grid item xs={12} md={6}>
-                                <Plot
-                                    data={[
-                                        {
-                                            x: months,
-                                            y: data.revenue,
-                                            type: "lines",
-                                            fill: "tozeroy",
-                                            color: "third",
-                                            line: { shape: "spline", smoothing: 1},
-                                            markerSize: 0,
-                                            hoverinfo: "none",
-                                        },
-                                        {
-                                            x: months,
-                                            y: data.revenue,
-                                            type: "scatter",
-                                            mode: "markers",
-                                            color: "primary",
-                                            markerSize: 10,
-                                            name: "",
-                                            hoverinfo: "none",
-                                        },
-                                    ]}
-                                    showLegend={false}
-                                    title="Revenue"
-                                    titleColor="primary"
-                                    titleFontSize={16}
-                                    displayBar={false}
-                                    height="250px"
-                                    annotations={[
-                                        {
-                                            x: months[data.revenue.indexOf(Math.min(...data.revenue))],
-                                            y: Math.min(...data.revenue),
-                                            xref: "x",
-                                            yref: "y",
-                                            text: `Min: ${Math.min(...data.revenue).toFixed(2)}%`,
-                                            showarrow: true,
-                                            font: {
-                                                size: 16,
-                                                color: "#ffffff"
+                                <Box position="relative">
+                                    <Plot
+                                        data={[
+                                            {
+                                                x: months,
+                                                y: data.revenue,
+                                                type: "lines",
+                                                fill: "tozeroy",
+                                                color: "third",
+                                                line: { shape: "spline", smoothing: 1},
+                                                markerSize: 0,
+                                                hoverinfo: "none",
                                             },
-                                            align: "center",
-                                            arrowhead: 2,
-                                            arrowsize: 1,
-                                            arrowwidth: 2,
-                                            arrowcolor: colors.primary,
-                                            borderpad: 4,
-                                            bgcolor: colors.primary,
-                                            opacity: 0.8
-                                        },
-                                        {
-                                            x: months[data.revenue.indexOf(Math.max(...data.revenue))],
-                                            y: Math.max(...data.revenue),
-                                            xref: "x",
-                                            yref: "y",
-                                            text: `Max: ${Math.max(...data.revenue).toFixed(2)}%`,
-                                            showarrow: true,
-                                            font: {
-                                                size: 16,
-                                                color: "#ffffff"
+                                            {
+                                                x: months,
+                                                y: data.revenue,
+                                                type: "scatter",
+                                                mode: "markers",
+                                                color: "primary",
+                                                markerSize: 10,
+                                                name: "",
+                                                hoverinfo: "none",
                                             },
-                                            align: "center",
-                                            arrowhead: 2,
-                                            arrowsize: 1,
-                                            arrowwidth: 2,
-                                            arrowcolor: colors.primary,
-                                            borderpad: 4,
-                                            bgcolor: colors.primary,
-                                            opacity: 0.8
-                                        },
-                                    ]}
-                                />
+                                        ]}
+                                        showLegend={false}
+                                        title="Revenue"
+                                        titleColor="primary"
+                                        titleFontSize={16}
+                                        displayBar={false}
+                                        height="250px"
+                                        shapes={revenueThresholdShapes}
+                                        annotations={[
+                                            {
+                                                x: months[data.revenue.indexOf(Math.min(...data.revenue))],
+                                                y: Math.min(...data.revenue),
+                                                xref: "x",
+                                                yref: "y",
+                                                text: `Min: ${Math.min(...data.revenue).toFixed(2)}%`,
+                                                showarrow: true,
+                                                font: {
+                                                    size: 16,
+                                                    color: "#ffffff"
+                                                },
+                                                align: "center",
+                                                arrowhead: 2,
+                                                arrowsize: 1,
+                                                arrowwidth: 2,
+                                                arrowcolor: colors.primary,
+                                                borderpad: 4,
+                                                bgcolor: colors.primary,
+                                                opacity: 0.8
+                                            },
+                                            {
+                                                x: months[data.revenue.indexOf(Math.max(...data.revenue))],
+                                                y: Math.max(...data.revenue),
+                                                xref: "x",
+                                                yref: "y",
+                                                text: `Max: ${Math.max(...data.revenue).toFixed(2)}%`,
+                                                showarrow: true,
+                                                font: {
+                                                    size: 16,
+                                                    color: "#ffffff"
+                                                },
+                                                align: "center",
+                                                arrowhead: 2,
+                                                arrowsize: 1,
+                                                arrowwidth: 2,
+                                                arrowcolor: colors.primary,
+                                                borderpad: 4,
+                                                bgcolor: colors.primary,
+                                                opacity: 0.8
+                                            },
+                                        ]}
+                                    />
+                                    <Box
+                                        data-testid="chart-threshold-line"
+                                        sx={{
+                                            position: "absolute",
+                                            left: 24,
+                                            right: 24,
+                                            top: 56,
+                                            borderTop: `2px dashed ${colors.error}`,
+                                            pointerEvents: "none",
+                                        }}
+                                    />
+                                </Box>
                                 <Typography variant="body1" textAlign="center">
                                     {`Average: ${(data.revenue.reduce((acc, curr) => acc + curr, 0) / data.revenue.length).toFixed(2)}%`}
+                                </Typography>
+                                <Typography variant="body2" textAlign="center" color="white.main" sx={{ opacity: 0.8 }}>
+                                    {activeRevenueAlert
+                                        ? `Active threshold alert at ${revenueThreshold}%`
+                                        : `Suggested threshold line at ${revenueThreshold}% until an alert rule is configured`}
                                 </Typography>
                             </Grid>
                             <Grid item xs={12} md={6}>
