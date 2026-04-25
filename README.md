@@ -1,7 +1,7 @@
 # SGarden Total
 
 Unified SGarden project with one root dependency manifest and two app folders:
-
+2
 - `frontend/`
 - `backend/`
 
