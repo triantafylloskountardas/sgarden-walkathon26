@@ -27,6 +27,7 @@ const DatePicker = ({
 	color = "white",
 	borderRadius = "10px",
 	width = "100%",
+	testId,
 }) => {
 	const classes = useStyles({ background, color, borderRadius, width });
 	const [customValue, setCustomValue] = useState(value);
@@ -46,7 +47,7 @@ const DatePicker = ({
 					label={label}
 					inputFormat={inputFormat}
 					value={customValue}
-					renderInput={(params) => <TextField {...params} />}
+					renderInput={(params) => <TextField {...params} inputProps={{ ...params.inputProps, "data-testid": testId }} />}
 					onChange={handleChange}
 				/>
 			)}
@@ -58,7 +59,7 @@ const DatePicker = ({
 					label={label}
 					inputFormat={inputFormat}
 					value={customValue}
-					renderInput={(params) => <TextField {...params} />}
+					renderInput={(params) => <TextField {...params} inputProps={{ ...params.inputProps, "data-testid": testId }} />}
 					onChange={handleChange}
 				/>
 			)}
@@ -68,7 +69,7 @@ const DatePicker = ({
 					disabled={disabled}
 					label={label}
 					value={customValue}
-					renderInput={(params) => <TextField {...params} />}
+					renderInput={(params) => <TextField {...params} inputProps={{ ...params.inputProps, "data-testid": testId }} />}
 					onChange={handleChange}
 				/>
 			)}
@@ -79,7 +80,7 @@ const DatePicker = ({
 					disabled={disabled}
 					label={label}
 					value={customValue}
-					renderInput={(params) => <TextField {...params} />}
+					renderInput={(params) => <TextField {...params} inputProps={{ ...params.inputProps, "data-testid": testId }} />}
 					onChange={handleChange}
 				/>
 			)}

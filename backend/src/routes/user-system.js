@@ -1,7 +1,7 @@
 import express from "express";
 import crypto from "crypto";
 import { execFile } from "child_process";
-import { resolve, relative } from "path";
+import { resolve, relative, join } from "path";
 
 import { validations, email } from "../utils/index.js";
 import { User, Reset, Invitation } from "../models/index.js";
