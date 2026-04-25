@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Box, Button, Grid, Paper, TextField, Typography } from "@mui/material";
 
 import { changePassword, getProfile, updateProfile } from "../api/index.js";
-import { dayjs, useSnackbar } from "../utils/index.js";
+import { dayjs, useSnackbar, useI18n } from "../utils/index.js";
 
 const Profile = () => {
     const [profile, setProfile] = useState(null);
@@ -10,6 +10,7 @@ const Profile = () => {
     const [profileForm, setProfileForm] = useState({ username: "", email: "" });
     const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
     const { success, error } = useSnackbar();
+    const { t } = useI18n();
 
     const loadProfile = async () => {
         try {
@@ -18,10 +19,10 @@ const Profile = () => {
                 setProfile(response.profile);
                 setProfileForm({ username: response.profile.username || "", email: response.profile.email || "" });
             } else {
-                error(response?.message || "Unable to load profile.");
+                error(response?.message || t("profile.error.load"));
             }
         } catch (err) {
-            error("Unable to load profile.");
+            error(t("profile.error.load"));
         }
     };
 
@@ -39,7 +40,7 @@ const Profile = () => {
 
     const handleSaveProfile = async () => {
         if (!profileForm.username.trim() || !profileForm.email.trim()) {
-            error("Username and email cannot be empty.");
+            error(t("profile.error.empty"));
             return;
         }
 
@@ -48,23 +49,23 @@ const Profile = () => {
             if (response?.success) {
                 setProfile(response.profile);
                 setEditable(false);
-                success("Profile saved successfully.");
+                success(t("profile.success.update"));
             } else {
-                error(response?.message || "Unable to update profile.");
+                error(response?.message || t("profile.error.update"));
             }
         } catch (err) {
-            error("Unable to update profile.");
+            error(t("profile.error.update"));
         }
     };
 
     const handleSavePassword = async () => {
         if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-            error("All password fields are required.");
+            error(t("profile.error.passwordRequired"));
             return;
         }
 
         if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-            error("New passwords do not match.");
+            error(t("profile.error.passwordMatch"));
             return;
         }
 
@@ -72,26 +73,26 @@ const Profile = () => {
             const response = await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
             if (response?.success) {
                 setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-                success("Password updated successfully.");
+                success(t("profile.success.passwordUpdate"));
             } else {
-                error(response?.message || "Unable to update password.");
+                error(response?.message || t("profile.error.passwordUpdate"));
             }
         } catch (err) {
-            error("Unable to update password.");
+            error(t("profile.error.passwordUpdate"));
         }
     };
 
     return (
         <Box data-testid="profile-page" sx={{ p: 3 }}>
             <Typography variant="h4" gutterBottom color="white.main">
-                Profile
+                {t("profile.title")}
             </Typography>
 
             <Paper sx={{ p: 3, mb: 3, backgroundColor: "rgba(255,255,255,0.06)" }}>
                 <Grid container spacing={3}>
                     <Grid item xs={12} md={6}>
                         <Typography variant="subtitle2" color="grey.400" gutterBottom>
-                            Username
+                            {t("profile.username")}
                         </Typography>
                         {editable ? (
                             <TextField
@@ -111,7 +112,7 @@ const Profile = () => {
 
                     <Grid item xs={12} md={6}>
                         <Typography variant="subtitle2" color="grey.400" gutterBottom>
-                            Email
+                            {t("profile.email")}
                         </Typography>
                         {editable ? (
                             <TextField
@@ -131,7 +132,7 @@ const Profile = () => {
 
                     <Grid item xs={12} md={4}>
                         <Typography variant="subtitle2" color="grey.400" gutterBottom>
-                            Role
+                            {t("profile.role")}
                         </Typography>
                         <Typography data-testid="profile-role" color="white.main">
                             {profile?.role || "-"}
@@ -140,7 +141,7 @@ const Profile = () => {
 
                     <Grid item xs={12} md={4}>
                         <Typography variant="subtitle2" color="grey.400" gutterBottom>
-                            Account created
+                            {t("profile.accountCreated")}
                         </Typography>
                         <Typography data-testid="profile-created-at" color="white.main">
                             {profile?.createdAt ? dayjs(profile.createdAt).format("LLL") : "-"}
@@ -149,7 +150,7 @@ const Profile = () => {
 
                     <Grid item xs={12} md={4}>
                         <Typography variant="subtitle2" color="grey.400" gutterBottom>
-                            Last active
+                            {t("profile.lastActive")}
                         </Typography>
                         <Typography data-testid="profile-last-active" color="white.main">
                             {profile?.lastActive ? dayjs(profile.lastActive).format("LLL") : "-"}
@@ -163,7 +164,7 @@ const Profile = () => {
                             color="secondary"
                             onClick={() => setEditable(true)}
                         >
-                            Edit profile
+                            {t("profile.editProfile")}
                         </Button>
                         {editable && (
                             <Button
@@ -172,7 +173,7 @@ const Profile = () => {
                                 color="primary"
                                 onClick={handleSaveProfile}
                             >
-                                Save changes
+                                {t("profile.saveChanges")}
                             </Button>
                         )}
                     </Grid>
@@ -181,13 +182,13 @@ const Profile = () => {
 
             <Paper sx={{ p: 3, backgroundColor: "rgba(255,255,255,0.06)" }}>
                 <Typography variant="h5" gutterBottom color="white.main">
-                    Change password
+                    {t("profile.changePassword")}
                 </Typography>
                 <Grid container spacing={3}>
                     <Grid item xs={12} md={4}>
                         <TextField
                             fullWidth
-                            label="Current password"
+                            label={t("profile.currentPassword")}
                             type="password"
                             value={passwordForm.currentPassword}
                             onChange={handlePasswordChange("currentPassword")}
@@ -199,7 +200,7 @@ const Profile = () => {
                     <Grid item xs={12} md={4}>
                         <TextField
                             fullWidth
-                            label="New password"
+                            label={t("profile.newPassword")}
                             type="password"
                             value={passwordForm.newPassword}
                             onChange={handlePasswordChange("newPassword")}
@@ -211,7 +212,7 @@ const Profile = () => {
                     <Grid item xs={12} md={4}>
                         <TextField
                             fullWidth
-                            label="Confirm password"
+                            label={t("profile.confirmPassword")}
                             type="password"
                             value={passwordForm.confirmPassword}
                             onChange={handlePasswordChange("confirmPassword")}
@@ -227,7 +228,7 @@ const Profile = () => {
                             color="primary"
                             onClick={handleSavePassword}
                         >
-                            Save new password
+                            {t("profile.saveNewPassword")}
                         </Button>
                     </Grid>
                 </Grid>

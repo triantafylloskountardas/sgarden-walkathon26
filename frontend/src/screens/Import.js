@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 
 import { importData } from "../api/index.js";
-import { useSnackbar } from "../utils/index.js";
+import { useSnackbar, useI18n } from "../utils/index.js";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -159,6 +159,7 @@ const Import = () => {
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef(null);
     const { success, error } = useSnackbar();
+    const { t } = useI18n();
 
     const columns = useMemo(() => getPreviewColumns(previewRows), [previewRows]);
 
@@ -265,18 +266,18 @@ const Import = () => {
     return (
         <Box data-testid="import-page" sx={{ p: 3 }}>
             <Typography variant="h4" gutterBottom color="white.main">
-                Import Data
+                {t("import.title")}
             </Typography>
 
             <Paper sx={{ p: 3, mb: 2, cursor: "pointer" }} onClick={triggerFileInput} onDrop={handleDrop} onDragOver={handleDragOver} data-testid="import-dropzone">
                 <Typography sx={{ fontWeight: 700 }} color="white.main">
-                    Drag and drop a CSV or JSON file here
+                    {t("import.dropzone.title")}
                 </Typography>
                 <Typography color="white.main" sx={{ mt: 1 }}>
-                    Or click to choose a file.
+                    {t("import.dropzone.subtitle")}
                 </Typography>
                 <Typography data-testid="import-file-name" color="white.main" sx={{ mt: 1, fontStyle: "italic" }}>
-                    {fileName || "No file selected"}
+                    {fileName || t("import.noFile")}
                 </Typography>
                 <input
                     ref={fileInputRef}
@@ -348,7 +349,7 @@ const Import = () => {
                         onClick={handleSubmit}
                         disabled={loading || validCount === 0}
                     >
-                        Import
+                        {t("import.submit")}
                     </Button>
                 </Grid>
                 <Grid item>
@@ -358,7 +359,7 @@ const Import = () => {
                         data-testid="import-cancel"
                         onClick={resetPage}
                     >
-                        Reset
+                        {t("import.reset")}
                     </Button>
                 </Grid>
             </Grid>

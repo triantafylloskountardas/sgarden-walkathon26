@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import "dayjs/locale/el";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isBetween from "dayjs/plugin/isBetween";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -10,5 +11,6 @@ dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(relativeTime);
 dayjs.extend(localeData);
+dayjs.locale("en");
 
 export { default } from "dayjs";

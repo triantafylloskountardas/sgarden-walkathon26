@@ -7,7 +7,7 @@ import { ExpandMore } from "@mui/icons-material";
 
 import Accordion from "./Accordion.js";
 
-import { jwt } from "../utils/index.js";
+import { jwt, useI18n } from "../utils/index.js";
 
 const useStyles = makeStyles((theme) => ({
 	sidebar: {
@@ -70,6 +70,7 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 	const [isSmall, setIsSmall] = useState(false);
 	const navigate = useNavigate();
 	const classes = useStyles();
+	const { t } = useI18n();
 
 	const isAdmin = jwt.isAdmin();
 
@@ -77,38 +78,38 @@ const Sidebar = ({ isSmall: sidebarIsSmall }) => {
 
 	const buttons = [
 		...(isAdmin ? [{
-			text: "Users",
+			text: t("sidebar.users"),
 			handler: () => {
 				navigate("/users");
 			},
 		}] : []),
 		{
-			text: "Overview",
+			text: t("sidebar.overview"),
 			handler: () => {
 				navigate("/dashboard");
 			},
 		},
 		{
-			text: "Analytics",
+			text: t("sidebar.analytics"),
 			handler: () => {
 				navigate("/dashboard1");
 			},
 		},
 		{
-			text: "Insights",
+			text: t("sidebar.insights"),
 			handler: () => {
 				navigate("/dashboard2");
 			},
 		},
 		{
-			text: "Import",
+			text: t("sidebar.import"),
 			handler: () => {
 				navigate("/import");
 			},
 			testId: "sidebar-import-link",
 		},
 		{
-			text: "Alerts",
+			text: t("sidebar.alerts"),
 			handler: () => {
 				navigate("/alerts");
 			},

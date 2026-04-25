@@ -27,11 +27,12 @@ import {
 	Search as SearchIcon,
 	Close as CloseIcon,
 	History as HistoryIcon,
+	Language as LanguageIcon,
 } from "@mui/icons-material";
 import { makeStyles } from "@mui/styles";
 import { Image } from "mui-image";
 
-import { jwt, capitalize } from "../utils/index.js";
+import { jwt, capitalize, useI18n } from "../utils/index.js";
 import logo from "../assets/images/logo.png";
 import { ReactComponent as LogoutIcon } from "../assets/images/logout.svg";
 
@@ -135,61 +136,61 @@ const writeRecentSearches = (recentSearches) => {
 	}
 };
 
-const getSearchItems = (isAdmin) => [
+const getSearchItems = (isAdmin, t) => [
 	{
 		id: "dashboard-overview",
-		title: "Overview Dashboard",
-		description: "Main dashboard overview and KPIs",
+		title: t("search.item.dashboardOverview.title"),
+		description: t("search.item.dashboardOverview.description"),
 		path: "/dashboard",
-		category: "Dashboards",
+		category: t("search.category.dashboards"),
 		keywords: ["overview", "dashboard", "home", "kpi"],
 	},
 	{
 		id: "dashboard-analytics",
-		title: "Analytics Dashboard",
-		description: "Analytics and filtered business trends",
+		title: t("search.item.dashboardAnalytics.title"),
+		description: t("search.item.dashboardAnalytics.description"),
 		path: "/dashboard1",
-		category: "Dashboards",
+		category: t("search.category.dashboards"),
 		keywords: ["analytics", "dashboard1", "trends", "filters"],
 	},
 	{
 		id: "dashboard-insights",
-		title: "Insights Dashboard",
-		description: "Detailed charts and performance insights",
+		title: t("search.item.dashboardInsights.title"),
+		description: t("search.item.dashboardInsights.description"),
 		path: "/dashboard2",
-		category: "Dashboards",
+		category: t("search.category.dashboards"),
 		keywords: ["insights", "dashboard2", "reports", "performance"],
 	},
 	{
 		id: "profile",
-		title: "Profile",
-		description: "Manage your account and password",
+		title: t("search.item.profile.title"),
+		description: t("search.item.profile.description"),
 		path: "/profile",
-		category: "Account",
+		category: t("search.category.account"),
 		keywords: ["profile", "account", "password", "user"],
 	},
 	{
 		id: "import",
-		title: "Import Data",
-		description: "Upload CSV or JSON records",
+		title: t("search.item.import.title"),
+		description: t("search.item.import.description"),
 		path: "/import",
-		category: "Data",
+		category: t("search.category.data"),
 		keywords: ["import", "csv", "json", "upload", "data"],
 	},
 	{
 		id: "map",
-		title: "Map",
-		description: "Regional data visualization",
+		title: t("search.item.map.title"),
+		description: t("search.item.map.description"),
 		path: "/map",
-		category: "Data",
+		category: t("search.category.data"),
 		keywords: ["map", "regions", "geography", "visualization"],
 	},
 	...(isAdmin ? [{
 		id: "users",
-		title: "Users",
-		description: "Manage users and roles",
+		title: t("search.item.users.title"),
+		description: t("search.item.users.description"),
 		path: "/users",
-		category: "Admin",
+		category: t("search.category.admin"),
 		keywords: ["users", "admin", "roles", "permissions"],
 	}] : []),
 ];
@@ -228,21 +229,25 @@ const groupResultsByCategory = (items) => {
 
 const Header = ({ isAuthenticated }) => {
 	const classes = useStyles();
+	const { language, setLanguage, t } = useI18n();
 
 	const location = useLocation();
 	const navigate = useNavigate();
 	const isAdmin = jwt.isAdmin();
 	const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
+	const [languageAnchorEl, setLanguageAnchorEl] = useState(null);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [searchValue, setSearchValue] = useState("");
 	const [recentSearches, setRecentSearches] = useState(() => readRecentSearches());
 	const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
-	const searchItems = getSearchItems(isAdmin);
+	const searchItems = getSearchItems(isAdmin, t);
 	const filteredResults = filterSearchItems(searchItems, searchValue);
 	const groupedResults = groupResultsByCategory(filteredResults);
 
 	const handleMobileMenuClose = () => setMobileMoreAnchorEl(null);
 	const handleMobileMenuOpen = (event) => setMobileMoreAnchorEl(event.currentTarget);
+	const handleLanguageMenuOpen = (event) => setLanguageAnchorEl(event.currentTarget);
+	const handleLanguageMenuClose = () => setLanguageAnchorEl(null);
 	const openSearch = () => setSearchOpen(true);
 	const closeSearch = () => {
 		setSearchOpen(false);
@@ -284,7 +289,7 @@ const Header = ({ isAuthenticated }) => {
 	const buttons = [
 		{
 			icon: null,
-			text: "Profile",
+			text: t("header.profile"),
 			handler: () => {
 				navigate("/profile");
 			},
@@ -292,7 +297,7 @@ const Header = ({ isAuthenticated }) => {
 		},
 		{
 			icon: <LogoutIcon className={classes.svgIcon} />,
-			text: "Logout",
+			text: t("header.logout"),
 			handler: () => {
 				jwt.destroyToken();
 				navigate("/");
@@ -340,6 +345,16 @@ const Header = ({ isAuthenticated }) => {
 							<>
 								<Box sx={{ display: { xs: "none", sm: "none", md: "flex" }, alignItems: "center", py: 1, mr: 1 }}>
 									<Button
+										data-testid="language-switcher"
+										color="secondary"
+										variant="outlined"
+										startIcon={<LanguageIcon />}
+										onClick={handleLanguageMenuOpen}
+										sx={{ textTransform: "none", mr: 1 }}
+									>
+										<span data-testid="language-active">{t(`language.active.${language}`)}</span>
+									</Button>
+									<Button
 										data-testid="global-search-trigger"
 										color="secondary"
 										variant="outlined"
@@ -347,7 +362,7 @@ const Header = ({ isAuthenticated }) => {
 										onClick={openSearch}
 										sx={{ textTransform: "none" }}
 									>
-										Search
+										{t("header.search")}
 										<Typography component="span" sx={{ ml: 1, color: "grey.500", fontSize: 12 }}>
 											Ctrl+K
 										</Typography>
@@ -388,6 +403,30 @@ const Header = ({ isAuthenticated }) => {
 						{renderMobileMenu}
 					</>
 				)}
+			<Menu
+				anchorEl={languageAnchorEl}
+				open={Boolean(languageAnchorEl)}
+				onClose={handleLanguageMenuClose}
+			>
+				<MenuItem
+					data-testid="language-option-en"
+					onClick={() => {
+						setLanguage("en");
+						handleLanguageMenuClose();
+					}}
+				>
+					{t("language.option.en")}
+				</MenuItem>
+				<MenuItem
+					data-testid="language-option-el"
+					onClick={() => {
+						setLanguage("el");
+						handleLanguageMenuClose();
+					}}
+				>
+					{t("language.option.el")}
+				</MenuItem>
+			</Menu>
 			<Dialog
 				open={searchOpen}
 				onClose={closeSearch}
@@ -396,7 +435,7 @@ const Header = ({ isAuthenticated }) => {
 				PaperProps={{ "data-testid": "global-search-dialog" }}
 			>
 				<DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-					Global Search
+					{t("header.globalSearch")}
 					<IconButton data-testid="global-search-close" onClick={closeSearch}>
 						<CloseIcon />
 					</IconButton>
@@ -405,8 +444,8 @@ const Header = ({ isAuthenticated }) => {
 					<TextField
 						fullWidth
 						autoFocus
-						label="Search dashboards, users, and data"
-						placeholder="Type to search across the app"
+						label={t("header.searchLabel")}
+						placeholder={t("header.searchPlaceholder")}
 						value={searchValue}
 						onChange={(event) => setSearchValue(event.target.value)}
 						inputProps={{ "data-testid": "global-search-input" }}
@@ -448,7 +487,7 @@ const Header = ({ isAuthenticated }) => {
 									))
 									: (
 										<Typography data-testid="global-search-no-results" color="white.main" sx={{ mt: 1 }}>
-											No results found.
+											{t("header.searchNoResults")}
 										</Typography>
 									)}
 							</Box>
@@ -456,7 +495,7 @@ const Header = ({ isAuthenticated }) => {
 						: (
 							<Box data-testid="global-search-recent" sx={{ mt: 2 }}>
 								<Typography variant="overline" color="grey.500" sx={{ display: "block", mb: 1 }}>
-									Recent searches
+									{t("header.searchRecent")}
 								</Typography>
 								{recentSearches.length > 0
 									? (
@@ -476,16 +515,16 @@ const Header = ({ isAuthenticated }) => {
 									)
 									: (
 										<Typography color="white.main">
-											Your recent searches will appear here.
+											{t("header.searchRecentEmpty")}
 										</Typography>
 									)}
 							</Box>
 						)}
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={() => setSearchValue("")}>Clear</Button>
+					<Button onClick={() => setSearchValue("")}>{t("common.clear")}</Button>
 					<Button onClick={closeSearch} variant="contained" color="secondary">
-						Done
+						{t("common.done")}
 					</Button>
 				</DialogActions>
 			</Dialog>

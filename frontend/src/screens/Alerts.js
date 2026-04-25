@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 
 import Dropdown from "../components/Dropdown.js";
-import { useSnackbar } from "../utils/index.js";
+import { useSnackbar, useI18n } from "../utils/index.js";
 import {
 	alertMetrics,
 	alertOperators,
@@ -38,6 +38,25 @@ const Alerts = () => {
 		enabled: true,
 	});
 	const { success, error } = useSnackbar();
+	const { t } = useI18n();
+	const metricOptions = alertMetrics.map((metric) => ({
+		...metric,
+		text: metric.value === "Revenue"
+			? t("dashboard.revenue")
+			: metric.value === "Expenses"
+				? t("dashboard.expenses")
+				: metric.value === "Profit"
+					? t("dashboard.profit")
+					: t("dashboard.growthRate"),
+	}));
+	const operatorOptions = alertOperators.map((operator) => ({
+		...operator,
+		text: operator.value === ">"
+			? t("alerts.operator.gt")
+			: operator.value === "<"
+				? t("alerts.operator.lt")
+				: t("alerts.operator.eq"),
+	}));
 
 	const triggeredAlerts = useMemo(() => evaluateAlerts(alerts, baselineMetricValues), [alerts]);
 
@@ -58,7 +77,7 @@ const Alerts = () => {
 
 	const handleCreateAlert = () => {
 		if (formValues.threshold === "" || Number.isNaN(Number(formValues.threshold))) {
-			error("Threshold must be a numeric value.");
+			error(t("alerts.error.threshold"));
 			return;
 		}
 
@@ -74,7 +93,7 @@ const Alerts = () => {
 		];
 
 		persistAlerts(nextAlerts);
-		success("Alert rule created.");
+		success(t("alerts.success.created"));
 		resetForm();
 	};
 
@@ -87,7 +106,7 @@ const Alerts = () => {
 
 	const handleDeleteAlert = (id) => {
 		persistAlerts(alerts.filter((alert) => alert.id !== id));
-		success("Alert rule removed.");
+		success(t("alerts.success.removed"));
 	};
 
 	return (
@@ -95,15 +114,15 @@ const Alerts = () => {
 			<Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
 				<Grid item>
 					<Typography variant="h4" color="white.main">
-						Threshold Alerts
+						{t("alerts.title")}
 					</Typography>
 					<Typography color="white.main" sx={{ opacity: 0.8 }}>
-						Create alert rules for key metrics and review triggered conditions.
+						{t("alerts.subtitle")}
 					</Typography>
 				</Grid>
 				<Grid item>
 					<Button data-testid="alerts-add-button" variant="contained" color="secondary" onClick={() => setFormOpen(true)}>
-						Create Alert
+						{t("alerts.create")}
 					</Button>
 				</Grid>
 			</Grid>
@@ -112,25 +131,25 @@ const Alerts = () => {
 				<Paper data-testid="alerts-form" sx={{ p: 3, mb: 3, backgroundColor: "rgba(255,255,255,0.08)" }}>
 					<Grid container spacing={2}>
 						<Grid item xs={12} md={4}>
-							<Typography color="white.main" sx={{ mb: 1 }}>Metric</Typography>
+							<Typography color="white.main" sx={{ mb: 1 }}>{t("alerts.metric")}</Typography>
 							<Dropdown
-								items={alertMetrics}
+								items={metricOptions}
 								value={formValues.metric}
 								onChange={(event) => setFormValues((current) => ({ ...current, metric: event.target.value }))}
 								testId="alerts-field-metric"
 							/>
 						</Grid>
 						<Grid item xs={12} md={4}>
-							<Typography color="white.main" sx={{ mb: 1 }}>Operator</Typography>
+							<Typography color="white.main" sx={{ mb: 1 }}>{t("alerts.operator")}</Typography>
 							<Dropdown
-								items={alertOperators}
+								items={operatorOptions}
 								value={formValues.operator}
 								onChange={(event) => setFormValues((current) => ({ ...current, operator: event.target.value }))}
 								testId="alerts-field-operator"
 							/>
 						</Grid>
 						<Grid item xs={12} md={4}>
-							<Typography color="white.main" sx={{ mb: 1 }}>Threshold</Typography>
+							<Typography color="white.main" sx={{ mb: 1 }}>{t("alerts.threshold")}</Typography>
 							<TextField
 								fullWidth
 								type="number"
@@ -150,16 +169,16 @@ const Alerts = () => {
 										color="secondary"
 									/>
 								)}
-								label="Enable this alert immediately"
+								label={t("alerts.enableImmediately")}
 								sx={{ color: "white.main" }}
 							/>
 						</Grid>
 						<Grid item xs={12} sx={{ display: "flex", gap: 2 }}>
 							<Button data-testid="alerts-form-submit" variant="contained" color="secondary" onClick={handleCreateAlert}>
-								Save Alert
+								{t("alerts.save")}
 							</Button>
 							<Button data-testid="alerts-form-cancel" variant="outlined" color="secondary" onClick={resetForm}>
-								Cancel
+								{t("alerts.cancel")}
 							</Button>
 						</Grid>
 					</Grid>
@@ -169,10 +188,10 @@ const Alerts = () => {
 			{alerts.length === 0 ? (
 				<Paper data-testid="alerts-empty" sx={{ p: 3, mb: 3, backgroundColor: "rgba(255,255,255,0.08)" }}>
 					<Typography color="white.main" fontWeight="bold">
-						No alert rules yet.
+						{t("alerts.emptyTitle")}
 					</Typography>
 					<Typography color="white.main" sx={{ opacity: 0.8 }}>
-						Create your first threshold alert to start monitoring key metrics.
+						{t("alerts.emptyBody")}
 					</Typography>
 				</Paper>
 			) : (
@@ -180,10 +199,10 @@ const Alerts = () => {
 					<Table data-testid="alerts-table">
 						<TableHead>
 							<TableRow>
-								<TableCell sx={{ color: "white.main" }}>Metric</TableCell>
-								<TableCell sx={{ color: "white.main" }}>Rule</TableCell>
-								<TableCell sx={{ color: "white.main" }}>Enabled</TableCell>
-								<TableCell sx={{ color: "white.main" }}>Actions</TableCell>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.metric")}</TableCell>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.rule")}</TableCell>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.enabled")}</TableCell>
+								<TableCell sx={{ color: "white.main" }}>{t("alerts.table.actions")}</TableCell>
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -206,7 +225,7 @@ const Alerts = () => {
 											color="error"
 											onClick={() => handleDeleteAlert(alert.id)}
 										>
-											Delete
+											{t("alerts.delete")}
 										</Button>
 									</TableCell>
 								</TableRow>
@@ -217,8 +236,8 @@ const Alerts = () => {
 			)}
 
 			<Paper sx={{ p: 3, backgroundColor: "rgba(255,255,255,0.08)" }}>
-				<Typography variant="h6" color="white.main" sx={{ mb: 2 }}>
-					Triggered Alerts
+					<Typography variant="h6" color="white.main" sx={{ mb: 2 }}>
+						{t("alerts.triggered")}
 				</Typography>
 				<Box data-testid="alerts-triggered-list">
 					{triggeredAlerts.length > 0 ? triggeredAlerts.map((alert) => (
@@ -231,12 +250,12 @@ const Alerts = () => {
 								{`${alert.metric} ${alert.operator} ${alert.threshold}`}
 							</Typography>
 							<Typography color="white.main" sx={{ opacity: 0.8 }}>
-								{`Current value: ${alert.currentValue.toFixed(2)}`}
+								{t("alerts.currentValue", { value: alert.currentValue.toFixed(2) })}
 							</Typography>
 						</Paper>
 					)) : (
 						<Typography color="white.main" sx={{ opacity: 0.8 }}>
-							No alerts are currently triggered.
+							{t("alerts.noneTriggered")}
 						</Typography>
 					)}
 				</Box>

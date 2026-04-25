@@ -4,6 +4,7 @@ import { Grid, Typography, Box, Paper } from "@mui/material";
 import Dropdown from "../components/Dropdown.js";
 import Card from "../components/Card.js";
 import Plot from "../components/Plot.js";
+import { useI18n } from "../utils/index.js";
 
 const availableRegions = ["Thessaloniki", "Athens", "Patras"];
 const generateRandomData = (minimum = 0, maximum = 100) => {
@@ -24,6 +25,7 @@ const Dashboard = () => {
     const [selectedRegion, setSelectedRegion] = useState("Thessaloniki");
     const [data, setData] = useState({});
     const [viewerCount] = useState(3);
+    const { t } = useI18n();
 
     useEffect(() => {
         const newData = {
@@ -50,11 +52,11 @@ const Dashboard = () => {
     return (
         <Grid container py={2} flexDirection="column">
             <Typography variant="h4" gutterBottom color="white.main">
-                Overview
+                {t("dashboard.overview")}
             </Typography>
 
             <Grid item style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "20px" }}>
-                <Typography variant="body1" style={{ marginRight: "10px" }} color="white.main">Region:</Typography>
+                <Typography variant="body1" style={{ marginRight: "10px" }} color="white.main">{t("dashboard.region")}</Typography>
                 <Dropdown
                     items={availableRegions.map((region) => ({ value: region, text: region }))}
                     value={selectedRegion}
@@ -76,16 +78,16 @@ const Dashboard = () => {
                                 }}
                             />
                             <Typography data-testid="realtime-status" color="white.main" fontWeight="bold">
-                                Realtime status
+                                {t("dashboard.realtimeStatus")}
                             </Typography>
                             <Typography data-testid="realtime-status-connected" color="success.main" fontWeight="bold">
-                                Connected
+                                {t("dashboard.connected")}
                             </Typography>
                         </Box>
                     </Grid>
                     <Grid item xs={12} md={6}>
                         <Box data-testid="realtime-viewers" display="flex" justifyContent={{ xs: "flex-start", md: "flex-end" }} alignItems="center" gap={1}>
-                            <Typography color="white.main">Active viewers:</Typography>
+                            <Typography color="white.main">{t("dashboard.activeViewers")}</Typography>
                             <Typography data-testid="realtime-viewer-count" color="secondary.main" fontWeight="bold">
                                 {viewerCount}
                             </Typography>
@@ -96,7 +98,7 @@ const Dashboard = () => {
 
             <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
-                    <Card title="Monthly Revenue">
+                    <Card title={t("dashboard.monthlyRevenue")}>
                         <Box display="flex" flexDirection="column" alignItems="center">
                             <Typography variant="h3" fontWeight="bold" color="secondary.main">{formatNumber(data?.monthlyRevenue?.value, "%", false)}</Typography>
                             <Grid item display="flex" flexDirection="row">
@@ -104,14 +106,14 @@ const Dashboard = () => {
                                     {formatNumber(data?.monthlyRevenue?.change, "%")}
                                 </Typography>
                                 <Typography variant="body" color="secondary.main" ml={1}>
-                                    {"than last month"}
+                                    {t("dashboard.thanLastMonth")}
                                 </Typography>
                             </Grid>
                         </Box>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                    <Card title="New Customers">
+                    <Card title={t("dashboard.newCustomers")}>
                         <Box display="flex" flexDirection="column" alignItems="center">
                             <Typography variant="h3" fontWeight="bold" color="secondary.main">{formatNumber(data?.newCustomers?.value, "", false)}</Typography>
                             <Grid item display="flex" flexDirection="row">
@@ -119,14 +121,14 @@ const Dashboard = () => {
                                     {formatNumber(data?.newCustomers?.change, "%")}
                                 </Typography>
                                 <Typography variant="body" color="secondary.main" ml={1}>
-                                    {"than last month"}
+                                    {t("dashboard.thanLastMonth")}
                                 </Typography>
                             </Grid>
                         </Box>
                     </Card>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                    <Card title="Active Subscriptions">
+                    <Card title={t("dashboard.activeSubscriptions")}>
                         <Box display="flex" flexDirection="column" alignItems="center">
                             <Typography variant="h3" fontWeight="bold" color="secondary.main">{formatNumber(data?.activeSubscriptions?.value, "", false)}</Typography>
                             <Grid item display="flex" flexDirection="row">
@@ -134,7 +136,7 @@ const Dashboard = () => {
                                     {formatNumber(data?.activeSubscriptions?.change, "%")}
                                 </Typography>
                                 <Typography variant="body" color="secondary.main" ml={1}>
-                                    {"than last month"}
+                                    {t("dashboard.thanLastMonth")}
                                 </Typography>
                             </Grid>
                         </Box>
@@ -143,7 +145,7 @@ const Dashboard = () => {
 
                 <Grid item xs={12} sm={4}>
                     <Card
-                        title="Weekly Sales"
+                        title={t("dashboard.weeklySales")}
                         footer={(
                             <Grid sx={{ width: "100%", borderTop: "1px solid gray" }}>
                                 <Typography variant="body2" component="p" sx={{ marginTop: "10px" }}>{"🕗 averages (last month)"}</Typography>
@@ -171,7 +173,7 @@ const Dashboard = () => {
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <Card
-                        title="Revenue Trend"
+                        title={t("dashboard.revenueTrend")}
                         footer={(
                             <Grid sx={{ width: "100%", borderTop: "1px solid gray" }}>
                                 <Typography variant="body2" component="p" sx={{ marginTop: "10px" }}>{"🕗 updated 4min ago"}</Typography>
@@ -197,7 +199,7 @@ const Dashboard = () => {
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <Card
-                        title="Customer Satisfaction"
+                        title={t("dashboard.customerSatisfaction")}
                         footer={(
                             <Grid sx={{ width: "100%", borderTop: "1px solid gray" }}>
                                 <Typography variant="body2" component="p" sx={{ marginTop: "10px" }}>{"🕗 just updated"}</Typography>

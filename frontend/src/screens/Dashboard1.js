@@ -8,6 +8,7 @@ import Map from "../components/Map.js";
 
 import colors from "../_colors.scss";
 import { findThresholdForMetric, readAlerts } from "../utils/alerts.js";
+import { useI18n } from "../utils/index.js";
 
 const availableRegions = ["Thessaloniki", "Athens", "Patras"];
 const availableMetrics = ["Revenue", "Expenses", "Profit", "Growth Rate"];
@@ -21,6 +22,7 @@ const Dashboard = () => {
     const [toDate, setToDate] = useState(new Date());
     const [months, setMonths] = useState([]);
     const [data, setData] = useState({ keyMetric: { date: randomDate(), value: generateRandomData(0, 100) }, revenue: [], expenses: [], profit: [], growthRate: [] });
+    const { t } = useI18n();
 
     const changePlotData = (fromD, toD) => {
         if (fromD && toD) {
@@ -79,11 +81,11 @@ const Dashboard = () => {
     return (
         <Grid container py={2} flexDirection="column">
             <Typography variant="h4" gutterBottom color="white.main">
-                Analytics
+                {t("dashboard.analytics")}
             </Typography>
 
             <Grid item style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "20px" }}>
-                <Typography variant="body1" style={{ marginRight: "10px" }} color="white.main">Region:</Typography>
+                <Typography variant="body1" style={{ marginRight: "10px" }} color="white.main">{t("dashboard.region")}</Typography>
                 <Dropdown
                     items={availableRegions.map((region) => ({ value: region, text: region }))}
                     value={selectedRegion}
@@ -95,7 +97,7 @@ const Dashboard = () => {
                 <Grid container item sm={12} md={4} spacing={4}>
                         <Grid item width="100%">
                             <Card
-                                title="Key Metric"
+                                title={t("dashboard.keyMetric")}
                                 footer={(
                                     <Box
                                         width="100%"
@@ -110,7 +112,7 @@ const Dashboard = () => {
                                         {selectedMetric && (
                                             <>
                                                 <Typography variant="body">
-                                                    {`Latest value of ${selectedMetric} for ${selectedRegion}`}
+                                                    {t("dashboard.latestMetricValue", { metric: selectedMetric, region: selectedRegion })}
                                                 </Typography>
                                                 <Typography variant="body1" fontWeight="bold" color="primary.main">
                                                     {`${data.keyMetric.date.toLocaleString("en-GB", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })} - ${data.keyMetric.value.toFixed(2)}%`}
@@ -120,7 +122,7 @@ const Dashboard = () => {
                                         {!selectedMetric && (
                                             <>
                                                 <Typography variant="body1" fontWeight="bold" color="white.main">
-                                                    {"No metric selected"}
+                                                    {t("dashboard.noMetricSelected")}
                                                 </Typography>
                                             </>
                                         )}
@@ -128,14 +130,23 @@ const Dashboard = () => {
                                 )}
                             >
                                 <Box height="100px" display="flex" alignItems="center" justifyContent="space-between">
-                                    <Typography width="fit-content" variant="subtitle1">Metric:</Typography>
+                                    <Typography width="fit-content" variant="subtitle1">{t("alerts.metric")}:</Typography>
                                     <Dropdown
                                         width="50%"
                                         height="40px"
                                         size="small"
                                         placeholder="Select"
                                         background="greyDark"
-                                        items={availableMetrics.map((metric) => ({ value: metric, text: metric }))}
+                                        items={availableMetrics.map((metric) => ({
+                                            value: metric,
+                                            text: metric === "Revenue"
+                                                ? t("dashboard.revenue")
+                                                : metric === "Expenses"
+                                                    ? t("dashboard.expenses")
+                                                    : metric === "Profit"
+                                                        ? t("dashboard.profit")
+                                                        : t("dashboard.growthRate"),
+                                        }))}
                                         value={selectedMetric}
                                         onChange={(event) => setSelectedMetric(event.target.value)}
                                     />
@@ -143,18 +154,18 @@ const Dashboard = () => {
                             </Card>
                         </Grid>
                         <Grid item width="100%">
-                            <Card title="Regional Overview">
+                            <Card title={t("dashboard.regionalOverview")}>
                                 <Map />
                             </Card>
                         </Grid>
                 </Grid>
 
                 <Grid item sm={12} md={8}>
-                    <Card title="Trends">
+                    <Card title={t("dashboard.trends")}>
                         <Box display="flex" justifyContent="space-between" mb={1}>
                             <Grid item xs={12} sm={6} display="flex" flexDirection="row" alignItems="center">
                                 <Typography variant="subtitle1" align="center" mr={2}>
-                                    {"From: "}
+                                    {t("dashboard.from")}
                                 </Typography>
                                 <DatePicker
                                     width="200px"
@@ -168,7 +179,7 @@ const Dashboard = () => {
                             </Grid>
                             <Grid item xs={12} sm={6} display="flex" flexDirection="row" alignItems="center" justifyContent="flex-end">
                                 <Typography variant="subtitle1" align="center" mr={2}>
-                                    {"To: "}
+                                    {t("dashboard.to")}
                                 </Typography>
                                 <DatePicker
                                     width="200px"
@@ -208,7 +219,7 @@ const Dashboard = () => {
                                             },
                                         ]}
                                         showLegend={false}
-                                        title="Revenue"
+                                        title={t("dashboard.revenue")}
                                         titleColor="primary"
                                         titleFontSize={16}
                                         displayBar={false}
@@ -270,12 +281,12 @@ const Dashboard = () => {
                                     />
                                 </Box>
                                 <Typography variant="body1" textAlign="center">
-                                    {`Average: ${(data.revenue.reduce((acc, curr) => acc + curr, 0) / data.revenue.length).toFixed(2)}%`}
+                                    {t("dashboard.average", { value: (data.revenue.reduce((acc, curr) => acc + curr, 0) / data.revenue.length).toFixed(2) })}
                                 </Typography>
                                 <Typography variant="body2" textAlign="center" color="white.main" sx={{ opacity: 0.8 }}>
                                     {activeRevenueAlert
-                                        ? `Active threshold alert at ${revenueThreshold}%`
-                                        : `Suggested threshold line at ${revenueThreshold}% until an alert rule is configured`}
+                                        ? t("dashboard.activeThreshold", { value: revenueThreshold })
+                                        : t("dashboard.suggestedThreshold", { value: revenueThreshold })}
                                 </Typography>
                             </Grid>
                             <Grid item xs={12} md={6}>
@@ -303,7 +314,7 @@ const Dashboard = () => {
                                         },
                                     ]}
                                     showLegend={false}
-                                    title="Expenses"
+                                    title={t("dashboard.expenses")}
                                     titleColor="primary"
                                     titleFontSize={16}
                                     displayBar={false}
@@ -352,7 +363,7 @@ const Dashboard = () => {
                                     ]}
                                 />
                                 <Typography variant="body1" textAlign="center">
-                                    {`Average: ${(data.expenses.reduce((acc, curr) => acc + curr, 0) / data.expenses.length).toFixed(2)}%`}
+                                    {t("dashboard.average", { value: (data.expenses.reduce((acc, curr) => acc + curr, 0) / data.expenses.length).toFixed(2) })}
                                 </Typography>
                             </Grid>
                             <Grid item xs={12} md={6}>
@@ -380,7 +391,7 @@ const Dashboard = () => {
                                         },
                                     ]}
                                     showLegend={false}
-                                    title="Profit"
+                                    title={t("dashboard.profit")}
                                     titleColor="primary"
                                     titleFontSize={16}
                                     displayBar={false}
@@ -429,7 +440,7 @@ const Dashboard = () => {
                                     ]}
                                 />
                                 <Typography variant="body1" textAlign="center">
-                                    {`Average: ${(data.profit.reduce((acc, curr) => acc + curr, 0) / data.profit.length).toFixed(2)}%`}
+                                    {t("dashboard.average", { value: (data.profit.reduce((acc, curr) => acc + curr, 0) / data.profit.length).toFixed(2) })}
                                 </Typography>
                             </Grid>
                             <Grid item xs={12} md={6}>
@@ -457,7 +468,7 @@ const Dashboard = () => {
                                         },
                                     ]}
                                     showLegend={false}
-                                    title="Growth Rate"
+                                    title={t("dashboard.growthRate")}
                                     titleColor="primary"
                                     titleFontSize={16}
                                     displayBar={false}
@@ -506,7 +517,7 @@ const Dashboard = () => {
                                     ]}
                                 />
                                 <Typography variant="body1" textAlign="center">
-                                    {`Average: ${(data.growthRate.reduce((acc, curr) => acc + curr, 0) / data.growthRate.length).toFixed(2)}%`}
+                                    {t("dashboard.average", { value: (data.growthRate.reduce((acc, curr) => acc + curr, 0) / data.growthRate.length).toFixed(2) })}
                                 </Typography>
                             </Grid>
                         </Grid>

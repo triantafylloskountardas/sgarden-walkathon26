@@ -5,12 +5,14 @@ import Card from "../components/Card.js";
 import Plot from "../components/Plot.js";
 
 import { getData } from "../api/index.js";
+import { useI18n } from "../utils/index.js";
 
 const availableRegions = ["Thessaloniki", "Athens", "Patras"];
 
 const Dashboard = () => {
     const [selectedRegion, setSelectedRegion] = useState("Thessaloniki");
     const [data, setData] = useState({ quarterlySalesDistribution: {}, budgetVsActual: {}, timePlot: {} });
+    const { t } = useI18n();
 
     useEffect(() => {
         getData().then((tempData) => {
@@ -25,11 +27,11 @@ const Dashboard = () => {
     return (
         <Grid container py={2} flexDirection="column">
             <Typography variant="h4" gutterBottom color="white.main">
-                Insights
+                {t("dashboard.insights")}
             </Typography>
 
             <Grid item style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "20px" }}>
-                <Typography variant="body1" style={{ marginRight: "10px" }} color="white.main">Region:</Typography>
+                <Typography variant="body1" style={{ marginRight: "10px" }} color="white.main">{t("dashboard.region")}</Typography>
                 <Dropdown
                     items={availableRegions.map((region) => ({ value: region, text: region }))}
                     value={selectedRegion}
@@ -39,7 +41,7 @@ const Dashboard = () => {
 
             <Grid container spacing={2}>
                 <Grid item sm={12} md={6}>
-                    <Card title="Quarterly Sales Distribution">
+                    <Card title={t("dashboard.quarterlySalesDistribution")}>
                         <Plot
                             data={[
                                 {
@@ -69,7 +71,7 @@ const Dashboard = () => {
                     </Card>
                 </Grid>
                 <Grid item sm={12} md={6}>
-                    <Card title="Budget vs Actual Spending">
+                    <Card title={t("dashboard.budgetVsActual")}>
                         <Plot
                             data={[
                                 {
@@ -77,21 +79,21 @@ const Dashboard = () => {
                                     y: Object.values(data?.budgetVsActual).map(month => month.budget),
                                     type: "bar",
                                     color: "primary",
-                                    title: "Budget",
+                                    title: t("dashboard.projected"),
                                 },
                                 {
                                     x: ["January", "February", "March", "April", "May", "June"],
                                     y: Object.values(data?.budgetVsActual).map(month => month.actual),
                                     type: "bar",
                                     color: "secondary",
-                                    title: "Actual",
+                                    title: t("dashboard.actual"),
                                 },
                                 {
                                     x: ["January", "February", "March", "April", "May", "June"],
                                     y: Object.values(data?.budgetVsActual).map(month => month.forecast),
                                     type: "bar",
                                     color: "third",
-                                    title: "Forecast",
+                                    title: t("dashboard.forecast"),
                                 },
                             ]}
                             showLegend={true}
@@ -102,25 +104,25 @@ const Dashboard = () => {
                     </Card>
                 </Grid>
                 <Grid item sm={12}>
-                    <Card title="Performance Over Time">
+                    <Card title={t("dashboard.performanceOverTime")}>
                         <Plot
                             data={[
                                 {
-                                    title: "Projected",
+                                    title: t("dashboard.projected"),
                                     x: Array.from({ length: 20 }, (_, i) => i + 1),
                                     y: data?.timePlot?.projected,
                                     type: "line",
                                     color: "primary",
                                 },
                                 {
-                                    title: "Actual",
+                                    title: t("dashboard.actual"),
                                     x: Array.from({ length: 20 }, (_, i) => i + 1),
                                     y: data?.timePlot?.actual,
                                     type: "line",
                                     color: "secondary",
                                 },
                                 {
-                                    title: "Historical Avg",
+                                    title: t("dashboard.historicalAvg"),
                                     x: Array.from({ length: 20 }, (_, i) => i + 1),
                                     y: data?.timePlot?.historicalAvg,
                                     type: "line",
